@@ -1,0 +1,4 @@
+job-board-data/
+preview.csv
+__pycache__/
+*.json
