@@ -1,0 +1,56 @@
+Software Engineer in payments infrastructure (Java, Spring Boot, Kafka) who also builds LLM evaluation harnesses, RAG
+pipelines and MCP-based agentic tools, measuring results with rigorous evaluation.
+EXPERIENCE
+Cashfree Payments — Payment Infrastructure                                                                     Bengaluru, India
+Software Engineer                                                                                            Jul 2026 – Present
+• Develop and run Java microservices in production with Spring Boot, Kafka and Redis for payment infrastructure.
+• Diagnosed a high-frequency JPMS reflection-access failure in the refund service's masking logger, tracing it to missing
+JVM --add-opens flags.
+• Designed an automated pipeline-failure summarization tool for Slack, and build internal AI agents that automate routine
+team workflows.
+Software Engineer Intern                                                                                   Jan 2026 – Jun 2026
+• Built dynamic payment routing across UPI, cards, netbanking and wallets with real-time gateway selection and fallback,
+raising transaction success rate by 6% during peak load.
+• Cut the vulnerability surface of production dependencies by 40% through automated CVE scanning, targeted patching and
+security policy enforcement.
+Outlier (Scale AI) — AI Training and Model Evaluation Associate (Remote)                                 Dec 2024 – Dec 2025
+• Evaluated 1,000+ LLM responses for frontier-model training across adversarial testing, hallucination detection and
+multi-step reasoning, with rubric-based written feedback.
+• Designed prompt-level test methods and feedback workflows reused across 5+ client AI projects.
+PROJECTS
+Delhi Electricity Demand Forecasting — Live demo · GitHub                                                          2025 – 2026
+Python, LightGBM, TensorFlow (LSTM/GRU), Streamlit, GitHub Actions, Docker, pytest
+• Built a day-ahead demand forecaster on real Grid-India and Open-Meteo data: 2.45% MAPE on a held-out 2026 test (273
+days) vs 4.55% for a naive baseline; beat the baseline in 11/11 yearly walk-forward tests (2016–2026).
+• Benchmarked 15+ model families including LSTM, GRU, CNN-LSTM and Transformers; traced their apparent gains to
+data leakage and rebuilt the pipeline with leak tests in CI.
+• Deployed a live 7-day forecast dashboard with daily retraining and calibrated intervals (95% interval covered 94.1% of
+2026 days).
+SHL Assessment Recommender — RAG Pipeline — GitHub                                                      Sep 2025 – Oct 2025
+Python, LangGraph, FAISS, BM25, Gemini, FastAPI, Docker
+• Built a LangGraph pipeline matching job descriptions to 506 assessments via query enhancement, hybrid FAISS + BM25
+retrieval, confidence-based retry and LLM reranking.
+• Wrote a stage-wise evaluation harness; LLM reranking of a 30-item shortlist lifted Recall@10 from 0.23 to 0.48. Served
+via FastAPI with degraded-mode fallbacks when model calls fail.
+AI Test Lab — MCP-Driven LLM Test Generation — GitHub
+Python, MCP, FastAPI, pytest, GitHub Actions, Hugging Face Inference (Qwen3-Coder)
+• Built a harness that has an LLM write pytest suites from a payments API spec, then runs, repairs and prunes them, scoring
+each suite by false alarms, coverage and 16 seeded bugs.
+• LLM suite caught 11/16 bugs vs 3/16 for the human baseline, with 0 false alarms; a weak-assertion check stopped the
+repair loop "cheating" and lifted detection from 8/16 to 11/16.
+• Exposed the harness as an MCP server so Claude Code or any MCP client can act as the test-writing agent, with an
+import allow-list for generated code and CI on every push.
+TECHNICAL SKILLS
+Languages: Java, Python, SQL, C++
+Backend: Spring Boot, FastAPI, REST APIs, Microservices, Kafka, Redis, MySQL, PostgreSQL
+AI / LLM: RAG, LangGraph, LangChain, FAISS, Embeddings & Reranking, LLM Evaluation, MCP, Hugging Face
+ML: LightGBM, scikit-learn, TensorFlow, Pandas, NumPy, Time-series Validation
+DevOps: Docker, GitHub Actions, CI/CD, AWS (EC2, S3), Linux, Git
+ACHIEVEMENTS
+• Finalist, Smart India Hackathon 2024 (top 30 of 600+ teams) · Guinness World Record, Microsoft AI Fest 2025
+• Regional Mathematical Olympiad, top 0.03% in Uttar Pradesh · 1,000+ competitive programming problems solved
+EDUCATION
+Lovely Professional University, Punjab — B.Tech, Computer Science & Engineering                      CGPA 8.67 · 2022 – 2026
+Class XII                                                                                                             96.4%
+Class X                                                                                                                 92%
+

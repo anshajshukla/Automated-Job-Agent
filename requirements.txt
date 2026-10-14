@@ -1,2 +1,3 @@
 python-jobspy
-gspread>=6
+fastembed
+requests

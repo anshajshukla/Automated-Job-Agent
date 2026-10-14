@@ -2,16 +2,26 @@ name: collect-jobs
 on:
   schedule: [{cron: "30 2 * * *"}]   # 08:00 IST
   workflow_dispatch:
+permissions:
+  contents: write                     # commit data/seen.txt + data/all_jobs_latest.csv
+concurrency: collect-jobs
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: "3.12"}
+        with: {python-version: "3.12", cache: pip}
+      - uses: actions/cache@v4
+        with: {path: model_cache, key: bge-small-en-v1.5}
       - run: pip install -r requirements.txt
       - run: python collector.py
         env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          SHEET_ID: ${{ secrets.SHEET_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      - name: Save seen jobs + full list
+        run: |
+          git config user.name "job-collector-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || (git commit -m "data: $(date -u +%F) run" && git push)
