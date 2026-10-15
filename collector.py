@@ -17,7 +17,7 @@ os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
 NOTION_DB = os.environ.get("NOTION_DB_ID") or "da6a16b97df9409a84898ee006bbb0bb"
 SEEN_FILE, ALL_FILE = "data/seen.txt", "data/all_jobs_latest.csv"
 STRONG, MAYBE = 55, 45          # Match % thresholds for the Notion board
-MAX_EXP = 3                     # hard cut: roles asking for more years are dropped
+MAX_EXP = 2                     # hard cut: roles asking for 3+ years are dropped
 MAX_FETCH, MAX_NOTION = 600, 150
 HOURS_OLD = 14                  # runs at 08:00 and 18:00 IST; overlap is removed via data/seen.txt
 UA = {"User-Agent": "personal-job-collector/1.0", "Accept": "application/json"}
