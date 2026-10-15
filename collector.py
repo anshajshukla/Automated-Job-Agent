@@ -95,6 +95,40 @@ def job(source, company, title, location, url, posted, desc="", ats=""):
 
 # ---------------- sources ----------------
 
+# India careers-site jobs by normalized company name, used to find the company's own posting
+# for Indeed/LinkedIn/Naukri cards (filled by from_feashliaa)
+ATS_INDEX = defaultdict(list)
+CO_STOP = {"pvt", "private", "ltd", "limited", "inc", "llc", "llp", "india", "technologies", "technology", "tech",
+           "solutions", "services", "group", "corp", "corporation", "the", "co", "company", "careers", "global",
+           "systems", "labs", "plc", "gmbh", "software", "consulting"}
+
+
+def co_keys(name):
+    """'Hewlett Packard Enterprise | HPE' -> {'hewlettpackardenterprise', 'hpe'}; 'doordashindia' -> {'doordash'}."""
+    keys = set()
+    for part in re.split(r"[|/(),]", (name or "").lower()):
+        toks = [t for t in re.findall(r"[a-z0-9]+", part) if t not in CO_STOP]
+        if toks:
+            keys.add("".join(toks))
+    return {re.sub(r"(india|careers|jobs|global)$", "", k) or k for k in keys}
+
+
+def title_norm(t):
+    return " ".join(re.findall(r"[a-z0-9+#]+", (t or "").lower()))
+
+
+def find_on_ats(j, min_ratio=0.8):
+    """Same company + closest title among India careers-site jobs, or None."""
+    from difflib import SequenceMatcher
+    cands = [c for k in co_keys(j["company"]) for c in ATS_INDEX.get(k, [])]
+    best, best_r = None, min_ratio
+    for c in cands:
+        r = SequenceMatcher(None, title_norm(j["title"]), title_norm(c["title"])).ratio()
+        if r >= best_r:
+            best, best_r = c, r
+    return best
+
+
 def from_feashliaa(data_dir, days=2):
     if not os.path.isdir(data_dir):
         subprocess.run(["git", "clone", "-q", "--depth", "1", "https://github.com/Feashliaa/job-board-data", data_dir], check=True)
@@ -103,11 +137,16 @@ def from_feashliaa(data_dir, days=2):
     for f in sorted(glob.glob(os.path.join(data_dir, "data/chunks/jobs_chunk_*.json.gz"))):
         with gzip.open(f, "rt") as fh:
             for j in json.load(fh):
-                if (j.get("first_seen") or "") >= cutoff and j.get("title") and INDIA.search(j.get("location") or ""):
+                if not (j.get("title") and INDIA.search(j.get("location") or "")):
+                    continue
+                for k in co_keys(j.get("company")):
+                    ATS_INDEX[k].append(dict(title=j["title"], url=j.get("url", ""), ats=j.get("ats", ""), company=j.get("company")))
+                if (j.get("first_seen") or "") >= cutoff:
                     jb = job(f"ats:{j.get('ats', '')}", j.get("company"), j["title"], j["location"], j.get("url"), j.get("first_seen"), ats=j.get("ats", ""))
                     jb["skill_level"], jb["is_recruiter"] = j.get("skill_level"), j.get("is_recruiter")
                     out.append(jb)
-    log.info("feashliaa: %d India jobs (first_seen within %d days)", len(out), days)
+    log.info("feashliaa: %d India jobs (first_seen within %d days); %d companies indexed for cross-checks",
+             len(out), days, len(ATS_INDEX))
     return out
 
 
@@ -219,6 +258,30 @@ def fetch_desc(j):
     return ""
 
 
+def cross_check(jobs, limit=200):
+    """Job-board cards with no description or no stated experience: look up the same job on the
+    company's own careers site (official ATS API) and add that description."""
+    todo = [j for j in jobs if j["source"].startswith("jobspy") and (not j["desc"] or min_exp(j["desc"]) is None)][:limit]
+    found = got = 0
+    for j in todo:
+        hit = find_on_ats(j)
+        if not hit:
+            continue
+        found += 1
+        j["portal"] = hit["url"]
+        try:
+            d = fetch_desc(dict(hit, desc=""))
+        except Exception as e:
+            log.debug("cross-check fetch failed %s: %s", hit["url"], e)
+            d = ""
+        if d:
+            got += 1
+            j["desc"] = (j["desc"] + "\n\n" + d).strip()
+        time.sleep(0.3)
+    log.info("cross-check: %d job-board jobs checked, %d found on company careers sites, %d descriptions added",
+             len(todo), found, got)
+
+
 def add_descriptions(jobs, workers=4):
     """Only engineering-looking titles; up to 4 hosts in parallel, one request at a time per host."""
     todo = [j for j in jobs if not j["desc"] and j["ats"] and TITLE_OK.search(j["title"])][:MAX_FETCH]
@@ -318,6 +381,7 @@ def notion_add(jobs, token):
             "Matched skills": txt(j["matched"]), "Missing skills": txt(j["missing"]),
             "Desc": {"select": {"name": "full" if j["desc"] else "title-only"}}, "Key": txt(j["key"]),
             "Salary": txt(j.get("salary")),
+            "Company portal": {"url": j.get("portal") or None},
             "Exp check": {"select": {"name": "Verify" if j.get("min_exp") is None else "Checked"}},
         }
         if j.get("max_lpa") is not None:
@@ -364,11 +428,13 @@ def recheck(token):
         src = (pr["Source"]["select"] or {}).get("name", "")
         j = job(src, plain(pg, "Company"), plain(pg, "Role"), plain(pg, "Location"), pr["Link"]["url"], "",
                 ats=src[4:] if src.startswith("ats:") else "")
-        if j["ats"]:
+        hit = None if j["ats"] else find_on_ats(j)
+        if j["ats"] or hit:
             try:
-                j["desc"] = fetch_desc(j)
+                j["desc"] = fetch_desc(j if j["ats"] else dict(hit, desc=""))
             except Exception as e:
                 log.debug("recheck fetch failed %s: %s", j["url"], e)
+            stats["on_portal"] += bool(hit)
             time.sleep(0.3)
         exp = min_exp(j["title"] + " " + j["desc"][:20000])
         if TITLE_BAD.search(j["title"]) or SENIOR_DESC.search(norm_text(j["desc"])) or (exp is not None and exp > MAX_EXP):
@@ -376,6 +442,8 @@ def recheck(token):
             log.info("recheck: trash '%s' at %s (min exp %s)", j["title"], j["company"], exp)
         else:
             props = {"Exp check": {"select": {"name": "Verify" if exp is None else "Checked"}}}
+            if hit:
+                props["Company portal"] = {"url": hit["url"]}
             if exp is not None:
                 props["Min exp (yrs)"] = {"number": exp}
             patch = {"properties": props}
@@ -384,20 +452,23 @@ def recheck(token):
         if not r.ok:
             log.warning("recheck: notion %s %s", r.status_code, r.text[:200])
         time.sleep(0.35)
-    log.info("recheck: %d cards: %d trashed (3+ yrs or senior), %d experience found and OK, %d marked Verify",
-             len(pages), stats["trashed"], stats["checked"], stats["verify"])
+    log.info("recheck: %d cards (%d job-board cards found on company sites): %d trashed (3+ yrs or senior), "
+             "%d experience found and OK, %d marked Verify",
+             len(pages), stats["on_portal"], stats["trashed"], stats["checked"], stats["verify"])
 
 
 def main():
     args = set(sys.argv[1:])
     if "--recheck" in args:
+        from_feashliaa(os.environ.get("FEASHLIAA_DIR", "job-board-data"))  # builds ATS_INDEX for cross-checks
         recheck(os.environ["NOTION_TOKEN"])
         return
     os.makedirs("data", exist_ok=True)
     seen = set(open(SEEN_FILE).read().split()) if os.path.exists(SEEN_FILE) else set()
 
     # --jobspy-only (evening run): Feashliaa refreshes once a day, so the morning run covers it
-    jobs = [] if "--jobspy-only" in args else from_feashliaa(os.environ.get("FEASHLIAA_DIR", "job-board-data"))
+    recent = from_feashliaa(os.environ.get("FEASHLIAA_DIR", "job-board-data"))  # also builds ATS_INDEX
+    jobs = [] if "--jobspy-only" in args else recent
     if "--no-jobspy" not in args:
         jobs += from_jobspy()
     uniq = {}
@@ -410,6 +481,7 @@ def main():
 
     if "--no-fetch" not in args:
         add_descriptions(sorted(cands, key=lambda j: not TITLE_OK.search(j["title"])))
+        cross_check(cands)
         cands = [j for j in cands if hard_filter(j)]  # re-check experience now that descriptions are in
     Scorer(open("resume.txt").read(), "--no-embed" not in args).score(cands)
     board = sorted([j for j in cands if j["tier"]], key=lambda j: -j["match"])
