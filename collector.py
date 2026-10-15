@@ -240,7 +240,11 @@ class Scorer:
 def notion_add(jobs, token):
     h = {"Authorization": f"Bearer {token}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"}
     txt = lambda s: {"rich_text": [{"text": {"content": (s or "")[:1900]}}]}
-    added = 0
+    r = requests.get(f"https://api.notion.com/v1/databases/{NOTION_DB}", headers=h, timeout=30)
+    if not r.ok:  # 401 = wrong token, 404 = board not connected to the integration
+        log.error("notion: cannot open Job Tracker (%s %s). Nothing marked as seen; fix access and re-run.", r.status_code, r.text[:200])
+        sys.exit(1)
+    added, failed = 0, set()
     for j in jobs:
         props = {
             "Role": {"title": [{"text": {"content": j["title"][:200]}}]}, "Company": txt(j["company"]),
@@ -261,9 +265,11 @@ def notion_add(jobs, token):
         if r.ok:
             added += 1
         else:
+            failed.add(j["key"])
             log.warning("notion: %s %s", r.status_code, r.text[:200])
         time.sleep(0.35)
     log.info("notion: added %d of %d", added, len(jobs))
+    return failed
 
 
 def main():
@@ -299,9 +305,10 @@ def main():
     if "--dry-run" in args:
         log.info("dry run: wrote %s, Notion skipped", ALL_FILE)
         return
-    notion_add(board[:MAX_NOTION], os.environ["NOTION_TOKEN"])
+    # board jobs that failed or overflowed the cap stay unseen, so the next run retries them
+    retry = notion_add(board[:MAX_NOTION], os.environ["NOTION_TOKEN"]) | {j["key"] for j in board[MAX_NOTION:]}
     with open(SEEN_FILE, "a") as f:
-        f.writelines(j["key"] + "\n" for j in jobs)
+        f.writelines(j["key"] + "\n" for j in jobs if j["key"] not in retry)
 
 
 if __name__ == "__main__":
