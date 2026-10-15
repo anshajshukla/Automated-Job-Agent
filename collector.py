@@ -23,7 +23,11 @@ HOURS_OLD = 14                  # runs at 08:00 and 18:00 IST; overlap is remove
 UA = {"User-Agent": "personal-job-collector/1.0", "Accept": "application/json"}
 
 INDIA = re.compile(r"\b(india|bengaluru|bangalore|hyderabad|pune|chennai|mumbai|gurgaon|gurugram|noida|delhi|kolkata|ahmedabad|kochi|jaipur|remote[- ]?india)\b", re.I)
-TITLE_OK = re.compile(r"\b(software (development )?engineer|sde|backend|back[- ]end|java|python|ai engineer|ml engineer|machine learning|platform engineer|developer|llm|genai|applied ai|data engineer|full[- ]?stack)\b", re.I)
+TITLE_OK = re.compile(r"\b(software (development )?engineer|sde|backend|back[- ]end|java|python|ai engineer|ml engineer|machine learning|platform engineer|developer|llm|genai|applied ai|data engineer|full[- ]?stack|ai|ml|gen ?ai|data scien\w*|applied scien\w*|nlp|deep learning|computer vision|mlops|research engineer)\b", re.I)
+# Target focus: AI/ML roles open to early-career engineers
+AI_TITLE = re.compile(r"\b(ai|ml|machine learning|gen ?ai|llm|nlp|data scien\w*|applied scien\w*|deep learning|computer vision|mlops|agentic)\b", re.I)
+ENTRY = re.compile(r"\b(junior|jr\.?|associate|entry[- ]level|graduate|new grad|fresher|early career|sde[- ]?(1|i)|engineer (1|i))\b", re.I)
+AI_BONUS, ENTRY_BONUS = 10, 5
 TITLE_BAD = re.compile(r"\b(senior|sr\.?|staff|principal|lead|manager|head|director|architect|vp|iii|iv|sde[- ]?(2|ii|3)|engineer (2|ii|3)|intern(ship)?|sales|support|recruit|accountant|nurse|teacher)\b", re.I)
 EXP = re.compile(r"(\d{1,2})\s*(?:\+|-\s*\d{1,2}|to\s*\d{1,2})?\s*\+?\s*(?:years|yrs)", re.I)
 
@@ -36,7 +40,10 @@ SKILLS = {
     "RAG": r"\brag\b|retrieval[- ]augmented", "LLM": r"\bllms?\b|large language model", "LangChain": r"langchain", "LangGraph": r"langgraph",
     "FAISS": r"faiss|vector (db|database|search)", "Embeddings": r"embedding", "MCP": r"\bmcp\b|model context protocol",
     "Hugging Face": r"hugging ?face", "GenAI": r"gen(erative)? ?ai", "Agents": r"\bagent(s|ic)\b",
-    "scikit-learn": r"scikit|sklearn", "TensorFlow": r"tensorflow", "Machine learning": r"machine learning|\bml\b",
+    "scikit-learn": r"scikit|sklearn", "TensorFlow": r"tensorflow", "Machine learning": r"machine learning|\bml\b", "NLP": r"\bnlp\b|natural language|\bllms?\b",
+    "Deep learning": r"deep learning|neural net|lstm|transformer", "Time series": r"time[- ]series|forecast",
+    "LightGBM/XGBoost": r"lightgbm|xgboost", "LLM evaluation": r"\bevals?\b|evaluation harness|llm evaluation",
+    "Prompt engineering": r"prompt engineering|prompting",
     "Pandas": r"pandas", "Docker": r"docker", "CI/CD": r"ci/cd|github actions|jenkins", "AWS": r"\baws\b|amazon web services",
     "Linux": r"linux", "Git": r"\bgit\b", "Payments": r"payment|fintech|upi",
     # not on the resume (yet): count as missing when a job asks for them
@@ -44,7 +51,7 @@ SKILLS = {
     "JavaScript": r"javascript", "React": r"\breact\b", "Angular": r"angular", "Kotlin": r"kotlin", "Scala": r"\bscala\b",
     "Rust": r"\brust\b", "C#/.NET": r"c#|\.net\b", "PHP": r"\bphp\b", "Ruby": r"\bruby\b|rails", "Kubernetes": r"kubernetes|\bk8s\b",
     "Terraform": r"terraform", "GCP": r"\bgcp\b|google cloud", "Azure": r"azure", "Spark": r"\bspark\b", "Airflow": r"airflow",
-    "MongoDB": r"mongo", "Elasticsearch": r"elastic", "PyTorch": r"pytorch", "Salesforce": r"salesforce", "SAP": r"\bsap\b",
+    "MongoDB": r"mongo", "Elasticsearch": r"elastic", "PyTorch": r"pytorch", "Computer vision": r"computer vision|opencv|\bcv\b", "MLOps": r"mlops|mlflow|kubeflow|sagemaker", "Salesforce": r"salesforce", "SAP": r"\bsap\b",
     "ServiceNow": r"servicenow", "Embedded C": r"embedded|firmware", "Android/iOS": r"\bandroid\b|\bios\b|swift|flutter",
     "Selenium/QA": r"selenium|manual testing|\bqa\b", "Power BI/Tableau": r"power ?bi|tableau",
 }
@@ -92,8 +99,8 @@ def from_feashliaa(data_dir, days=2):
     return out
 
 
-SEARCHES = ["Java developer", "Python developer", "backend engineer", "software engineer Spring Boot", "AI engineer", "ML engineer python"]
-LINKEDIN_SEARCHES = ["backend engineer", "AI engineer"]  # LinkedIn returned 429 after 4 searches, so keep it to 2
+SEARCHES = ["AI engineer", "machine learning engineer", "GenAI LLM engineer", "data scientist", "Python developer", "backend engineer"]
+LINKEDIN_SEARCHES = ["AI engineer", "machine learning engineer"]  # LinkedIn returned 429 after 4 searches, so keep it to 2
 SITES = {
     "indeed": dict(site_name=["indeed"], country_indeed="India", location="Bengaluru"),
     "naukri": dict(site_name=["naukri"], location="Bengaluru"),
@@ -227,6 +234,11 @@ class Scorer:
             sem = min(max((float(cos) - 0.55) / 0.2, 0), 1)
             title = 1.0 if TITLE_OK.search(j["title"]) else 0.0
             pct = 100 * (0.5 * max(skill, 0) + 0.25 * sem + 0.25 * title)
+            if AI_TITLE.search(j["title"]):
+                pct += AI_BONUS
+            if ENTRY.search(j["title"]) or (j.get("min_exp") is not None and j["min_exp"] <= 2):
+                pct += ENTRY_BONUS
+            pct = min(pct, 100)
             if not j["desc"]:
                 pct *= 0.85  # title-only: less evidence, keep it a notch lower
             if not title:
