@@ -29,7 +29,11 @@ AI_TITLE = re.compile(r"\b(ai|ml|machine learning|gen ?ai|llm|nlp|data scien\w*|
 ENTRY = re.compile(r"\b(junior|jr\.?|associate|entry[- ]level|graduate|new grad|fresher|early career|sde[- ]?(1|i)|engineer (1|i))\b", re.I)
 AI_BONUS, ENTRY_BONUS = 10, 5
 TITLE_BAD = re.compile(r"\b(senior|sr\.?|staff|principal|lead|manager|head|director|architect|vp|iii|iv|sde[- ]?(2|ii|3)|engineer (2|ii|3)|intern(ship)?|sales|support|recruit|accountant|nurse|teacher)\b", re.I)
-EXP = re.compile(r"(\d{1,2})\s*(?:\+|-\s*\d{1,2}|to\s*\d{1,2})?\s*\+?\s*(?:years|yrs)", re.I)
+EXP = re.compile(r"(\d{1,2})\s*(?:\+|-\s*\d{1,2}|to\s*\d{1,2}|or more)?\s*\+?\s*(?:years?|yrs?)\b", re.I)
+EXP_LABEL = re.compile(r"(?:years?|yrs?) of (?:\w+ ){0,2}experience\s*[:\-]\s*(\d{1,2})", re.I)  # "Years of experience: 5"
+WORD_NUM = {w: str(i) for i, w in enumerate("zero one two three four five six seven eight nine ten".split())}
+# description says the role is senior even when the title doesn't
+SENIOR_DESC = re.compile(r"\b(?:looking for|seeking|hiring|as) an? (?:highly |very )?(?:experienced |seasoned )?(?:senior|sr\.?|lead|staff|principal)\b", re.I)
 
 # Skill vocabulary. Resume skills are whichever of these appear in resume.txt;
 # the rest only count against a job when the job asks for them.
@@ -62,8 +66,16 @@ def skills_in(text):
     return {k for k, rx in SKILL_RE.items() if rx.search(text or "")}
 
 
+def norm_text(text):
+    """Undo JobSpy's markdown escaping ("5\\+ years"), unify dashes, spell out number words."""
+    t = (text or "").replace("\\", "").replace("–", "-").replace("—", "-")
+    return re.sub(r"\b(" + "|".join(WORD_NUM) + r")\b(?=\s*(?:\+|or more)?\s*(?:years?|yrs?)\b)",
+                  lambda m: WORD_NUM[m.group(1).lower()], t, flags=re.I)
+
+
 def min_exp(text):
-    nums = [int(m.group(1)) for m in EXP.finditer(text or "") if int(m.group(1)) <= 20]
+    text = norm_text(text)
+    nums = [int(m.group(1)) for rx in (EXP, EXP_LABEL) for m in rx.finditer(text) if int(m.group(1)) <= 15]
     return min(nums) if nums else None
 
 
@@ -239,7 +251,9 @@ def hard_filter(j):
         return False
     if TITLE_BAD.search(j["title"]) or j.get("is_recruiter") or j.get("skill_level") in ("senior", "intern"):
         return False
-    exp = min_exp(j["title"] + " " + j["desc"][:3000])
+    if SENIOR_DESC.search(norm_text(j["desc"])):
+        return False
+    exp = min_exp(j["title"] + " " + j["desc"][:20000])
     j["min_exp"] = exp
     return exp is None or exp <= MAX_EXP
 
