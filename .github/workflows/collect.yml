@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "full or jobspy-only"
+        description: "full, jobspy-only, or recheck (re-check board cards with unknown experience)"
         default: full
         type: choice
-        options: [full, jobspy-only]
+        options: [full, jobspy-only, recheck]
 permissions:
   contents: write                     # commit data/seen.txt + data/all_jobs_latest.csv
 concurrency: collect-jobs
@@ -26,7 +26,9 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Collect
         run: |
-          if [ "${{ github.event.schedule }}" = "17 12 * * *" ] || [ "${{ inputs.mode }}" = "jobspy-only" ]; then
+          if [ "${{ inputs.mode }}" = "recheck" ]; then
+            python collector.py --recheck
+          elif [ "${{ github.event.schedule }}" = "17 12 * * *" ] || [ "${{ inputs.mode }}" = "jobspy-only" ]; then
             python collector.py --jobspy-only
           else
             python collector.py
