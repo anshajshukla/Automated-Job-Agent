@@ -318,6 +318,7 @@ def notion_add(jobs, token):
             "Matched skills": txt(j["matched"]), "Missing skills": txt(j["missing"]),
             "Desc": {"select": {"name": "full" if j["desc"] else "title-only"}}, "Key": txt(j["key"]),
             "Salary": txt(j.get("salary")),
+            "Exp check": {"select": {"name": "Verify" if j.get("min_exp") is None else "Checked"}},
         }
         if j.get("max_lpa") is not None:
             props["Max salary (LPA)"] = {"number": j["max_lpa"]}
@@ -340,8 +341,58 @@ def notion_add(jobs, token):
     return failed
 
 
+def recheck(token):
+    """One-off: re-check New cards with unknown experience using the current rules.
+    Careers-site cards get their description re-fetched; 3+ years or senior ones go to Notion trash."""
+    h = {"Authorization": f"Bearer {token}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"}
+    flt = {"and": [{"property": "Min exp (yrs)", "number": {"is_empty": True}},
+                   {"property": "Status", "status": {"equals": "New"}}]}
+    pages, cursor = [], None
+    while True:
+        body = {"filter": flt, "page_size": 100, **({"start_cursor": cursor} if cursor else {})}
+        r = requests.post(f"https://api.notion.com/v1/databases/{NOTION_DB}/query", headers=h, json=body, timeout=30)
+        r.raise_for_status()
+        d = r.json()
+        pages += d["results"]
+        if not d.get("has_more"):
+            break
+        cursor = d["next_cursor"]
+    plain = lambda p, k: "".join(t["plain_text"] for t in p["properties"][k].get("rich_text") or p["properties"][k].get("title") or [])
+    stats = Counter()
+    for pg in pages:
+        pr = pg["properties"]
+        src = (pr["Source"]["select"] or {}).get("name", "")
+        j = job(src, plain(pg, "Company"), plain(pg, "Role"), plain(pg, "Location"), pr["Link"]["url"], "",
+                ats=src[4:] if src.startswith("ats:") else "")
+        if j["ats"]:
+            try:
+                j["desc"] = fetch_desc(j)
+            except Exception as e:
+                log.debug("recheck fetch failed %s: %s", j["url"], e)
+            time.sleep(0.3)
+        exp = min_exp(j["title"] + " " + j["desc"][:20000])
+        if TITLE_BAD.search(j["title"]) or SENIOR_DESC.search(norm_text(j["desc"])) or (exp is not None and exp > MAX_EXP):
+            patch, stats["trashed"] = {"archived": True}, stats["trashed"] + 1
+            log.info("recheck: trash '%s' at %s (min exp %s)", j["title"], j["company"], exp)
+        else:
+            props = {"Exp check": {"select": {"name": "Verify" if exp is None else "Checked"}}}
+            if exp is not None:
+                props["Min exp (yrs)"] = {"number": exp}
+            patch = {"properties": props}
+            stats["checked" if exp is not None else "verify"] += 1
+        r = requests.patch(f"https://api.notion.com/v1/pages/{pg['id']}", headers=h, json=patch, timeout=30)
+        if not r.ok:
+            log.warning("recheck: notion %s %s", r.status_code, r.text[:200])
+        time.sleep(0.35)
+    log.info("recheck: %d cards: %d trashed (3+ yrs or senior), %d experience found and OK, %d marked Verify",
+             len(pages), stats["trashed"], stats["checked"], stats["verify"])
+
+
 def main():
     args = set(sys.argv[1:])
+    if "--recheck" in args:
+        recheck(os.environ["NOTION_TOKEN"])
+        return
     os.makedirs("data", exist_ok=True)
     seen = set(open(SEEN_FILE).read().split()) if os.path.exists(SEEN_FILE) else set()
 
