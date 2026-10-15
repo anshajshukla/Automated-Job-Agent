@@ -125,11 +125,50 @@ def from_jobspy(scrape=None, pause=20):
             n = 0 if df is None else len(df)
             for r in ([] if df is None else df.to_dict("records")):
                 desc = " ".join(str(r.get(c)) for c in ("experience_range", "skills", "description") if isinstance(r.get(c), str))
-                out.append(job(f"jobspy:{site}", str(r.get("company") or ""), str(r.get("title") or ""),
-                               str(r.get("location") or ""), r.get("job_url"), str(r.get("date_posted") or ""), desc))
+                jb = job(f"jobspy:{site}", str(r.get("company") or ""), str(r.get("title") or ""),
+                         str(r.get("location") or ""), r.get("job_url"), str(r.get("date_posted") or ""), desc)
+                jb["pay"] = {k: r.get(k) for k in ("min_amount", "max_amount", "interval", "currency")}
+                out.append(jb)
             log.info("jobspy %s '%s': %d results", site, term, n)
             time.sleep(pause)
     return out
+
+
+# ---------------- salary ----------------
+
+LPA_RANGE = re.compile(r"(\d{1,2}(?:\.\d{1,2})?)\s*(?:-|–|to)\s*(\d{1,2}(?:\.\d{1,2})?)\s*(?:lpa|l\.p\.a|lakhs?|lacs?)\b", re.I)
+LPA_ONE = re.compile(r"(\d{1,2}(?:\.\d{1,2})?)\s*(?:lpa|l\.p\.a|lakhs? per annum)\b", re.I)
+INR_RANGE = re.compile(r"(?:₹|rs\.?|inr)\s*([\d,]{7,})\s*(?:-|–|to)\s*(?:₹|rs\.?|inr)?\s*([\d,]{7,})", re.I)
+PER_YEAR = {"yearly": 1, "monthly": 12}
+
+
+def _num(x):
+    try:
+        x = float(x)
+        return None if x != x else x  # NaN from pandas
+    except (TypeError, ValueError):
+        return None
+
+
+def salary(j):
+    """(display text, max in lakhs/year or None). Published pay only; blank when not stated."""
+    p = j.get("pay") or {}
+    lo, hi, cur = _num(p.get("min_amount")), _num(p.get("max_amount")), str(p.get("currency") or "")
+    interval = str(getattr(p.get("interval"), "value", p.get("interval")) or "").lower()
+    if (lo or hi) and cur.upper() == "INR" and interval in PER_YEAR:
+        lo_l, hi_l = [round(v * PER_YEAR[interval] / 1e5, 1) if v else None for v in (lo, hi)]
+        return (f"₹{lo_l}–{hi_l} LPA" if lo_l and hi_l else f"₹{lo_l or hi_l} LPA"), hi_l or lo_l
+    if lo or hi:
+        return f"{cur} {int(lo or 0):,}–{int(hi or lo):,} {interval}".strip(), None
+    d = j["desc"]
+    if m := LPA_RANGE.search(d):
+        return f"₹{m.group(1)}–{m.group(2)} LPA", float(m.group(2))
+    if m := INR_RANGE.search(d):
+        a, b = (round(int(g.replace(",", "")) / 1e5, 1) for g in m.groups())
+        return f"₹{a}–{b} LPA", b
+    if m := LPA_ONE.search(d):
+        return f"₹{m.group(1)} LPA", float(m.group(1))
+    return "", None
 
 
 # ---------------- descriptions (official public ATS job APIs) ----------------
@@ -264,7 +303,10 @@ def notion_add(jobs, token):
             "Location": txt(j["location"]), "Source": {"select": {"name": j["source"][:90]}}, "Link": {"url": j["url"] or None},
             "Matched skills": txt(j["matched"]), "Missing skills": txt(j["missing"]),
             "Desc": {"select": {"name": "full" if j["desc"] else "title-only"}}, "Key": txt(j["key"]),
+            "Salary": txt(j.get("salary")),
         }
+        if j.get("max_lpa") is not None:
+            props["Max salary (LPA)"] = {"number": j["max_lpa"]}
         if j.get("min_exp") is not None:
             props["Min exp (yrs)"] = {"number": j["min_exp"]}
         if re.match(r"\d{4}-\d{2}-\d{2}$", j["posted"]):
@@ -308,7 +350,9 @@ def main():
     board = sorted([j for j in cands if j["tier"]], key=lambda j: -j["match"])
     log.info("board: %d Strong, %d Maybe", sum(j["tier"] == "Strong" for j in board), sum(j["tier"] == "Maybe" for j in board))
 
-    cols = ["match", "tier", "title", "company", "location", "source", "min_exp", "matched", "missing", "url", "posted", "key"]
+    for j in cands:
+        j["salary"], j["max_lpa"] = salary(j)
+    cols = ["match", "tier", "title", "company", "location", "source", "salary", "min_exp", "matched", "missing", "url", "posted", "key"]
     with open(ALL_FILE, "w", newline="") as f:
         w = csv.DictWriter(f, cols, extrasaction="ignore")
         w.writeheader()
