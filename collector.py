@@ -1,18 +1,25 @@
 """Daily job collector: Feashliaa ATS data + gentle JobSpy -> resume match % -> Notion board.
 Collection and tracking only. No applying, no proxies, no block bypassing."""
 import csv, glob, gzip, hashlib, html, json, logging, os, re, subprocess, sys, time
+from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlparse
 from datetime import datetime, timedelta, timezone
 
 import requests
 
 log = logging.getLogger("collector")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+for noisy in ("httpx", "huggingface_hub", "urllib3"):
+    logging.getLogger(noisy).setLevel(logging.WARNING)
+os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
 
 NOTION_DB = os.environ.get("NOTION_DB_ID") or "da6a16b97df9409a84898ee006bbb0bb"
 SEEN_FILE, ALL_FILE = "data/seen.txt", "data/all_jobs_latest.csv"
 STRONG, MAYBE = 55, 45          # Match % thresholds for the Notion board
 MAX_EXP = 3                     # hard cut: roles asking for more years are dropped
 MAX_FETCH, MAX_NOTION = 600, 150
+HOURS_OLD = 14                  # runs at 08:00 and 18:00 IST; overlap is removed via data/seen.txt
 UA = {"User-Agent": "personal-job-collector/1.0", "Accept": "application/json"}
 
 INDIA = re.compile(r"\b(india|bengaluru|bangalore|hyderabad|pune|chennai|mumbai|gurgaon|gurugram|noida|delhi|kolkata|ahmedabad|kochi|jaipur|remote[- ]?india)\b", re.I)
@@ -85,7 +92,8 @@ def from_feashliaa(data_dir, days=2):
     return out
 
 
-SEARCHES = ["SDE 1 Java", "backend engineer", "software engineer Spring Boot", "AI engineer", "ML engineer python"]
+SEARCHES = ["Java developer", "Python developer", "backend engineer", "software engineer Spring Boot", "AI engineer", "ML engineer python"]
+LINKEDIN_SEARCHES = ["backend engineer", "AI engineer"]  # LinkedIn returned 429 after 4 searches, so keep it to 2
 SITES = {
     "indeed": dict(site_name=["indeed"], country_indeed="India", location="Bengaluru"),
     "naukri": dict(site_name=["naukri"], location="Bengaluru"),
@@ -99,10 +107,10 @@ def from_jobspy(scrape=None, pause=20):
     out, blocked = [], set()
     for term in SEARCHES:
         for site, kw in SITES.items():
-            if site in blocked:
+            if site in blocked or (site == "linkedin" and term not in LINKEDIN_SEARCHES):
                 continue
             try:
-                df = scrape(search_term=term, results_wanted=20 if site == "linkedin" else 30, hours_old=24, **kw)
+                df = scrape(search_term=term, results_wanted=20 if site == "linkedin" else 30, hours_old=HOURS_OLD, **kw)
             except Exception as e:  # 429 / block / network: skip site for the day, no retries
                 log.warning("jobspy %s blocked or failed (%s); skipping it today", site, str(e)[:150])
                 blocked.add(site)
@@ -153,17 +161,28 @@ def fetch_desc(j):
     return ""
 
 
-def add_descriptions(jobs):
-    todo = [j for j in jobs if not j["desc"] and j["ats"]][:MAX_FETCH]
-    ok = 0
+def add_descriptions(jobs, workers=4):
+    """Only engineering-looking titles; up to 4 hosts in parallel, one request at a time per host."""
+    todo = [j for j in jobs if not j["desc"] and j["ats"] and TITLE_OK.search(j["title"])][:MAX_FETCH]
+    by_host = defaultdict(list)
     for j in todo:
-        try:
-            j["desc"] = fetch_desc(j)
-            ok += bool(j["desc"])
-        except Exception as e:
-            log.debug("desc fetch failed %s: %s", j["url"], e)
-        time.sleep(0.3)
-    log.info("descriptions: fetched %d of %d attempted", ok, len(todo))
+        by_host[urlparse(j["url"]).netloc].append(j)
+    tried, got = Counter(), Counter()
+
+    def run(host_jobs):
+        for j in host_jobs:
+            try:
+                j["desc"] = fetch_desc(j)
+            except Exception as e:
+                log.debug("desc fetch failed %s: %s", j["url"], e)
+            tried[j["ats"]] += 1
+            got[j["ats"]] += bool(j["desc"])
+            time.sleep(0.3)
+
+    with ThreadPoolExecutor(workers) as ex:
+        list(ex.map(run, by_host.values()))
+    log.info("descriptions: fetched %d of %d attempted (%s)", sum(got.values()), len(todo),
+             ", ".join(f"{a} {got[a]}/{tried[a]}" for a in sorted(tried)))
 
 
 # ---------------- filtering + resume match ----------------
@@ -221,7 +240,11 @@ class Scorer:
 def notion_add(jobs, token):
     h = {"Authorization": f"Bearer {token}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"}
     txt = lambda s: {"rich_text": [{"text": {"content": (s or "")[:1900]}}]}
-    added = 0
+    r = requests.get(f"https://api.notion.com/v1/databases/{NOTION_DB}", headers=h, timeout=30)
+    if not r.ok:  # 401 = wrong token, 404 = board not connected to the integration
+        log.error("notion: cannot open Job Tracker (%s %s). Nothing marked as seen; fix access and re-run.", r.status_code, r.text[:200])
+        sys.exit(1)
+    added, failed = 0, set()
     for j in jobs:
         props = {
             "Role": {"title": [{"text": {"content": j["title"][:200]}}]}, "Company": txt(j["company"]),
@@ -242,9 +265,11 @@ def notion_add(jobs, token):
         if r.ok:
             added += 1
         else:
+            failed.add(j["key"])
             log.warning("notion: %s %s", r.status_code, r.text[:200])
         time.sleep(0.35)
     log.info("notion: added %d of %d", added, len(jobs))
+    return failed
 
 
 def main():
@@ -252,7 +277,8 @@ def main():
     os.makedirs("data", exist_ok=True)
     seen = set(open(SEEN_FILE).read().split()) if os.path.exists(SEEN_FILE) else set()
 
-    jobs = from_feashliaa(os.environ.get("FEASHLIAA_DIR", "job-board-data"))
+    # --jobspy-only (evening run): Feashliaa refreshes once a day, so the morning run covers it
+    jobs = [] if "--jobspy-only" in args else from_feashliaa(os.environ.get("FEASHLIAA_DIR", "job-board-data"))
     if "--no-jobspy" not in args:
         jobs += from_jobspy()
     uniq = {}
@@ -279,9 +305,10 @@ def main():
     if "--dry-run" in args:
         log.info("dry run: wrote %s, Notion skipped", ALL_FILE)
         return
-    notion_add(board[:MAX_NOTION], os.environ["NOTION_TOKEN"])
+    # board jobs that failed or overflowed the cap stay unseen, so the next run retries them
+    retry = notion_add(board[:MAX_NOTION], os.environ["NOTION_TOKEN"]) | {j["key"] for j in board[MAX_NOTION:]}
     with open(SEEN_FILE, "a") as f:
-        f.writelines(j["key"] + "\n" for j in jobs)
+        f.writelines(j["key"] + "\n" for j in jobs if j["key"] not in retry)
 
 
 if __name__ == "__main__":
