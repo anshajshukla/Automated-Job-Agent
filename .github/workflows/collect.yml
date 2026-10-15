@@ -1,7 +1,15 @@
 name: collect-jobs
 on:
-  schedule: [{cron: "30 2 * * *"}]   # 08:00 IST
+  schedule:
+    - cron: "17 2 * * *"    # 07:47 IST: full run (Feashliaa + JobSpy + descriptions)
+    - cron: "17 12 * * *"   # 17:47 IST: JobSpy only
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "full or jobspy-only"
+        default: full
+        type: choice
+        options: [full, jobspy-only]
 permissions:
   contents: write                     # commit data/seen.txt + data/all_jobs_latest.csv
 concurrency: collect-jobs
@@ -16,7 +24,13 @@ jobs:
       - uses: actions/cache@v4
         with: {path: model_cache, key: bge-small-en-v1.5}
       - run: pip install -r requirements.txt
-      - run: python collector.py
+      - name: Collect
+        run: |
+          if [ "${{ github.event.schedule }}" = "17 12 * * *" ] || [ "${{ inputs.mode }}" = "jobspy-only" ]; then
+            python collector.py --jobspy-only
+          else
+            python collector.py
+          fi
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
       - name: Save seen jobs + full list
@@ -24,4 +38,4 @@ jobs:
           git config user.name "job-collector-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/
-          git diff --cached --quiet || (git commit -m "data: $(date -u +%F) run" && git push)
+          git diff --cached --quiet || (git commit -m "data: $(date -u +%F-%H%M) run" && git pull -q --rebase && git push)

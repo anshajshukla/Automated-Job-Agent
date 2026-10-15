@@ -13,6 +13,7 @@ SEEN_FILE, ALL_FILE = "data/seen.txt", "data/all_jobs_latest.csv"
 STRONG, MAYBE = 55, 45          # Match % thresholds for the Notion board
 MAX_EXP = 3                     # hard cut: roles asking for more years are dropped
 MAX_FETCH, MAX_NOTION = 600, 150
+HOURS_OLD = 14                  # runs at 08:00 and 18:00 IST; overlap is removed via data/seen.txt
 UA = {"User-Agent": "personal-job-collector/1.0", "Accept": "application/json"}
 
 INDIA = re.compile(r"\b(india|bengaluru|bangalore|hyderabad|pune|chennai|mumbai|gurgaon|gurugram|noida|delhi|kolkata|ahmedabad|kochi|jaipur|remote[- ]?india)\b", re.I)
@@ -102,7 +103,7 @@ def from_jobspy(scrape=None, pause=20):
             if site in blocked:
                 continue
             try:
-                df = scrape(search_term=term, results_wanted=20 if site == "linkedin" else 30, hours_old=24, **kw)
+                df = scrape(search_term=term, results_wanted=20 if site == "linkedin" else 30, hours_old=HOURS_OLD, **kw)
             except Exception as e:  # 429 / block / network: skip site for the day, no retries
                 log.warning("jobspy %s blocked or failed (%s); skipping it today", site, str(e)[:150])
                 blocked.add(site)
@@ -252,7 +253,8 @@ def main():
     os.makedirs("data", exist_ok=True)
     seen = set(open(SEEN_FILE).read().split()) if os.path.exists(SEEN_FILE) else set()
 
-    jobs = from_feashliaa(os.environ.get("FEASHLIAA_DIR", "job-board-data"))
+    # --jobspy-only (evening run): Feashliaa refreshes once a day, so the morning run covers it
+    jobs = [] if "--jobspy-only" in args else from_feashliaa(os.environ.get("FEASHLIAA_DIR", "job-board-data"))
     if "--no-jobspy" not in args:
         jobs += from_jobspy()
     uniq = {}
