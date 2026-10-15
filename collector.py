@@ -1,12 +1,18 @@
 """Daily job collector: Feashliaa ATS data + gentle JobSpy -> resume match % -> Notion board.
 Collection and tracking only. No applying, no proxies, no block bypassing."""
 import csv, glob, gzip, hashlib, html, json, logging, os, re, subprocess, sys, time
+from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlparse
 from datetime import datetime, timedelta, timezone
 
 import requests
 
 log = logging.getLogger("collector")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+for noisy in ("httpx", "huggingface_hub", "urllib3"):
+    logging.getLogger(noisy).setLevel(logging.WARNING)
+os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
 
 NOTION_DB = os.environ.get("NOTION_DB_ID") or "da6a16b97df9409a84898ee006bbb0bb"
 SEEN_FILE, ALL_FILE = "data/seen.txt", "data/all_jobs_latest.csv"
@@ -86,7 +92,8 @@ def from_feashliaa(data_dir, days=2):
     return out
 
 
-SEARCHES = ["SDE 1 Java", "backend engineer", "software engineer Spring Boot", "AI engineer", "ML engineer python"]
+SEARCHES = ["Java developer", "Python developer", "backend engineer", "software engineer Spring Boot", "AI engineer", "ML engineer python"]
+LINKEDIN_SEARCHES = ["backend engineer", "AI engineer"]  # LinkedIn returned 429 after 4 searches, so keep it to 2
 SITES = {
     "indeed": dict(site_name=["indeed"], country_indeed="India", location="Bengaluru"),
     "naukri": dict(site_name=["naukri"], location="Bengaluru"),
@@ -100,7 +107,7 @@ def from_jobspy(scrape=None, pause=20):
     out, blocked = [], set()
     for term in SEARCHES:
         for site, kw in SITES.items():
-            if site in blocked:
+            if site in blocked or (site == "linkedin" and term not in LINKEDIN_SEARCHES):
                 continue
             try:
                 df = scrape(search_term=term, results_wanted=20 if site == "linkedin" else 30, hours_old=HOURS_OLD, **kw)
@@ -154,17 +161,28 @@ def fetch_desc(j):
     return ""
 
 
-def add_descriptions(jobs):
-    todo = [j for j in jobs if not j["desc"] and j["ats"]][:MAX_FETCH]
-    ok = 0
+def add_descriptions(jobs, workers=4):
+    """Only engineering-looking titles; up to 4 hosts in parallel, one request at a time per host."""
+    todo = [j for j in jobs if not j["desc"] and j["ats"] and TITLE_OK.search(j["title"])][:MAX_FETCH]
+    by_host = defaultdict(list)
     for j in todo:
-        try:
-            j["desc"] = fetch_desc(j)
-            ok += bool(j["desc"])
-        except Exception as e:
-            log.debug("desc fetch failed %s: %s", j["url"], e)
-        time.sleep(0.3)
-    log.info("descriptions: fetched %d of %d attempted", ok, len(todo))
+        by_host[urlparse(j["url"]).netloc].append(j)
+    tried, got = Counter(), Counter()
+
+    def run(host_jobs):
+        for j in host_jobs:
+            try:
+                j["desc"] = fetch_desc(j)
+            except Exception as e:
+                log.debug("desc fetch failed %s: %s", j["url"], e)
+            tried[j["ats"]] += 1
+            got[j["ats"]] += bool(j["desc"])
+            time.sleep(0.3)
+
+    with ThreadPoolExecutor(workers) as ex:
+        list(ex.map(run, by_host.values()))
+    log.info("descriptions: fetched %d of %d attempted (%s)", sum(got.values()), len(todo),
+             ", ".join(f"{a} {got[a]}/{tried[a]}" for a in sorted(tried)))
 
 
 # ---------------- filtering + resume match ----------------
