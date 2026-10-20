@@ -501,7 +501,7 @@ def card_props(j, update=False):
 def notion_add(jobs, token):
     h = {"Authorization": f"Bearer {token}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"}
     txt = lambda s: {"rich_text": [{"text": {"content": (s or "")[:1900]}}]}
-    r = requests.get(f"https://api.notion.com/v1/databases/{NOTION_DB}", headers=h, timeout=30)
+    r = notion_call("get", f"https://api.notion.com/v1/databases/{NOTION_DB}", headers=h, timeout=30)
     if not r.ok:  # 401 = wrong token, 404 = board not connected to the integration
         log.error("notion: cannot open Job Tracker (%s %s). Nothing marked as seen; fix access and re-run.", r.status_code, r.text[:200])
         sys.exit(1)
@@ -518,10 +518,10 @@ def notion_add(jobs, token):
         on_board.add(dup_key(j))
         props = card_props(j)
         body = {"parent": {"database_id": NOTION_DB}, "properties": props, **({"children": desc_blocks(j)} if j["desc"] else {})}
-        r = requests.post("https://api.notion.com/v1/pages", headers=h, json=body, timeout=30)
+        r = notion_call("post", "https://api.notion.com/v1/pages", headers=h, json=body, timeout=30)
         if r.status_code == 429:
             time.sleep(float(r.headers.get("Retry-After", 2)))
-            r = requests.post("https://api.notion.com/v1/pages", headers=h, json=body, timeout=30)
+            r = notion_call("post", "https://api.notion.com/v1/pages", headers=h, json=body, timeout=30)
         if r.ok:
             added += 1
         else:
@@ -532,6 +532,23 @@ def notion_add(jobs, token):
     return failed
 
 
+def notion_call(method, url, tries=4, **kw):
+    """Notion request that survives slow responses: retries timeouts, connection errors, 429 and 5xx with backoff."""
+    for attempt in range(tries):
+        try:
+            r = getattr(requests, method)(url, **kw)
+            if r.status_code != 429 and r.status_code < 500:
+                return r
+            wait = float(r.headers.get("Retry-After", 2 ** attempt)) if hasattr(r, "headers") else 2 ** attempt
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            if attempt == tries - 1:
+                raise
+            wait = 2 ** attempt
+            log.warning("notion: %s, retrying in %ss", type(e).__name__, wait)
+        time.sleep(wait)
+    return r
+
+
 def _plain(prop):
     return "".join(t.get("plain_text", "") for t in prop.get("rich_text") or prop.get("title") or [])
 
@@ -540,7 +557,7 @@ def notion_query(h, flt):
     pages, cursor = [], None
     while True:
         body = {"page_size": 100, **({"filter": flt} if flt else {}), **({"start_cursor": cursor} if cursor else {})}
-        r = requests.post(f"https://api.notion.com/v1/databases/{NOTION_DB}/query", headers=h, json=body, timeout=30)
+        r = notion_call("post", f"https://api.notion.com/v1/databases/{NOTION_DB}/query", headers=h, json=body, timeout=30)
         r.raise_for_status()
         d = r.json()
         pages += d["results"]
@@ -551,7 +568,7 @@ def notion_query(h, flt):
 
 def page_text(h, page_id):
     """Plain text of a card's body (the description saved when the card was created)."""
-    r = requests.get(f"https://api.notion.com/v1/blocks/{page_id}/children?page_size=100", headers=h, timeout=30)
+    r = notion_call("get", f"https://api.notion.com/v1/blocks/{page_id}/children?page_size=100", headers=h, timeout=30)
     if not r.ok:
         return ""
     out = []
@@ -611,11 +628,11 @@ def recheck(token, scorer):
         else:
             stats["title-only" if not j["desc"] else "rescored"] += 1
             patch = {"properties": card_props(j, update=True)}
-        r = requests.patch(f"https://api.notion.com/v1/pages/{j['page_id']}", headers=h, json=patch, timeout=30)
+        r = notion_call("patch", f"https://api.notion.com/v1/pages/{j['page_id']}", headers=h, json=patch, timeout=30)
         if not r.ok:
             log.warning("recheck: notion %s %s", r.status_code, r.text[:200])
         elif "properties" in patch and j["desc"] and not j["had_body"]:
-            requests.patch(f"https://api.notion.com/v1/blocks/{j['page_id']}/children", headers=h,
+            notion_call("patch", f"https://api.notion.com/v1/blocks/{j['page_id']}/children", headers=h,
                            json={"children": desc_blocks(j)}, timeout=30)
         time.sleep(0.35)
     log.info("recheck: %d New cards: %s", len(cards), dict(stats))

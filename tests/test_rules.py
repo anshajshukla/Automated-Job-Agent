@@ -193,3 +193,20 @@ def test_min_salary_uses_card_value_in_recheck():
     j = jb("Backend Engineer", "")
     j["known_max_lpa"] = 8
     assert not c.hard_filter(j)
+
+
+def test_notion_call_retries_timeouts(monkeypatch):
+    calls = []
+
+    class R:
+        status_code, ok, headers = 200, True, {}
+
+    def flaky(url, **k):
+        calls.append(url)
+        if len(calls) < 3:
+            raise c.requests.exceptions.ReadTimeout("slow")
+        return R()
+
+    monkeypatch.setattr(c.requests, "get", flaky)
+    monkeypatch.setattr(c.time, "sleep", lambda s: None)
+    assert c.notion_call("get", "https://api.notion.com/v1/x").ok and len(calls) == 3
