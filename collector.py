@@ -129,6 +129,17 @@ def min_exp(text):
     return exp_info(text)[0]
 
 
+def link_key(url):
+    """Comparable link. Keeps the query string: Indeed/LinkedIn job ids live there (viewjob?jk=...);
+    only tracking parameters are dropped. Empty links never match each other."""
+    from urllib.parse import parse_qsl, urlencode, urlsplit
+    if not url:
+        return "nolink:" + str(id(url)) + os.urandom(4).hex()
+    u = urlsplit(url.strip())
+    q = [(k, v) for k, v in parse_qsl(u.query) if not k.lower().startswith(("utm_", "ref", "src", "source", "trk"))]
+    return f"{u.netloc.lower()}{u.path.rstrip('/')}?{urlencode(sorted(q))}"
+
+
 def dup_key(j):
     keys = sorted(co_keys(j["company"])) or [(j["company"] or "").lower()]
     return keys[0] + "|" + title_norm(j["title"])
@@ -491,11 +502,11 @@ def notion_add(jobs, token):
     on_board = set()
     for pg in notion_query(h, None):
         pr = pg["properties"]
-        on_board.add((pr["Link"].get("url") or "").split("?")[0])
+        on_board.add(link_key(pr["Link"].get("url")))
         on_board.add(dup_key({"company": _plain(pr["Company"]), "title": _plain(pr["Role"])}))
     added, failed, skipped = 0, set(), 0
     for j in jobs:
-        if dup_key(j) in on_board or (j["url"] or "").split("?")[0] in on_board:
+        if dup_key(j) in on_board or link_key(j["url"]) in on_board:
             skipped += 1
             continue
         on_board.add(dup_key(j))
@@ -578,7 +589,7 @@ def recheck(token, scorer):
     scorer.score(keep)
     best = {}  # duplicates (same company + role, or same link): keep the best-scored card
     for j in sorted(keep, key=lambda j: -(j.get("match") or 0)):
-        for k in (dup_key(j), (j["url"] or "").split("?")[0]):
+        for k in (dup_key(j), link_key(j["url"])):
             if k in best:
                 j["dup_of"] = best[k]
             best.setdefault(k, j["title"])  # cards with no description anywhere are scored title-only (Maybe at most)
