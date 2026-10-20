@@ -23,7 +23,9 @@ jobs:
         with: {python-version: "3.12", cache: pip}
       - uses: actions/cache@v4
         with: {path: model_cache, key: bge-small-en-v1.5}
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt pytest
+      - name: Rule tests (stop before touching the board if scoring rules broke)
+        run: python -m pytest tests -q
       - name: Collect
         run: |
           if [ "${{ inputs.mode }}" = "recheck" ]; then

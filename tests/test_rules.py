@@ -96,4 +96,5 @@ def test_recheck_rescores_and_trashes(scorer, monkeypatch):
     c.recheck("t", scorer)
     assert patches["1"] == {"archived": True}                      # 7+ years -> trashed
     assert patches["2"]["properties"]["Tier"]["select"]["name"] == "Strong"
-    assert patches["3"]["properties"]["Exp check"]["select"]["name"] == "Verify"  # no description anywhere
+    p3 = patches["3"]["properties"]                                    # no description anywhere
+    assert p3["Exp check"]["select"]["name"] == "Verify" and p3["Tier"]["select"]["name"] != "Strong"
