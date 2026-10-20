@@ -18,6 +18,7 @@ NOTION_DB = os.environ.get("NOTION_DB_ID") or "da6a16b97df9409a84898ee006bbb0bb"
 SEEN_FILE, ALL_FILE = "data/seen.txt", "data/all_jobs_latest.csv"
 STRONG, MAYBE = 65, 45          # Match % thresholds for the Notion board
 MAX_EXP = 2                     # hard cut: roles asking for 3+ years are dropped
+MIN_LPA = 15                    # hard cut: published pay topping out below this (lakhs/year) is dropped; unstated pay is kept
 MAX_FETCH, MAX_NOTION = 600, 150
 HOURS_OLD = 14                  # runs at 08:00 and 18:00 IST; overlap is removed via data/seen.txt
 UA = {"User-Agent": "personal-job-collector/1.0", "Accept": "application/json"}
@@ -401,6 +402,11 @@ def hard_filter(j):
         return False
     if SENIOR_DESC.search(norm_text(j["desc"])):
         return False
+    j["salary"], j["max_lpa"] = salary(j)
+    if j["max_lpa"] is None:
+        j["max_lpa"] = j.get("known_max_lpa")  # value already on the Notion card (recheck)
+    if j["max_lpa"] is not None and j["max_lpa"] < MIN_LPA:
+        return False
     exp, j["exp_evidence"] = exp_info(j["title"] + " " + j["desc"][:20000])
     j["min_exp"] = exp
     return exp is None or exp <= MAX_EXP
@@ -569,6 +575,7 @@ def recheck(token, scorer):
         j = job(src, plain(pg, "Company"), plain(pg, "Role"), plain(pg, "Location"), pr["Link"]["url"], "",
                 ats=src[4:] if src.startswith("ats:") else "")
         j["page_id"], hit = pg["id"], None
+        j["known_max_lpa"] = (pr.get("Max salary (LPA)") or {}).get("number")
         body = page_text(h, pg["id"])
         j["had_body"] = bool(body)
         try:
@@ -646,8 +653,6 @@ def main():
     board = sorted([j for j in cands if j["tier"]], key=lambda j: -j["match"])
     log.info("board: %d Strong, %d Maybe", sum(j["tier"] == "Strong" for j in board), sum(j["tier"] == "Maybe" for j in board))
 
-    for j in cands:
-        j["salary"], j["max_lpa"] = salary(j)
     cols = ["match", "tier", "title", "company", "location", "source", "salary", "min_exp", "matched", "missing", "url", "posted", "key"]
     with open(ALL_FILE, "w", newline="") as f:
         w = csv.DictWriter(f, cols, extrasaction="ignore")

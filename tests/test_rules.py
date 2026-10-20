@@ -174,3 +174,22 @@ def test_recheck_keeps_distinct_indeed_cards(scorer, monkeypatch):
     c.recheck("t", scorer)
     trashed = [k for k, v in patches.items() if v == {"archived": True}]
     assert trashed == ["4"] or trashed == ["3"]   # only the HP duplicate goes
+
+
+@pytest.mark.parametrize("desc, pay, ok", [
+    ("Java backend. 1-3 years. CTC 6-12 LPA", {}, False),          # tops out below 15
+    ("Java backend. 1-3 years. CTC 10-18 LPA", {}, True),          # range reaches 15+
+    ("Java backend. 1-3 years.", {}, True),                         # not stated -> kept
+    ("Java backend. 1-3 years.", {"min_amount": 400000, "max_amount": 900000, "interval": "yearly", "currency": "INR"}, False),
+    ("Java backend. 1-3 years.", {"min_amount": 150000, "max_amount": 200000, "interval": "monthly", "currency": "INR"}, True),  # 24 LPA
+])
+def test_min_salary(desc, pay, ok):
+    j = jb("Backend Engineer", desc)
+    j["pay"] = pay
+    assert c.hard_filter(j) is ok
+
+
+def test_min_salary_uses_card_value_in_recheck():
+    j = jb("Backend Engineer", "")
+    j["known_max_lpa"] = 8
+    assert not c.hard_filter(j)
