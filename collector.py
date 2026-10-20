@@ -29,12 +29,16 @@ AI_TITLE = re.compile(r"\b(ai|ml|machine learning|gen ?ai|llm|nlp|data scien\w*|
 ENTRY = re.compile(r"\b(junior|jr\.?|associate|entry[- ]level|graduate|new grad|fresher|early career|sde[- ]?(1|i)|engineer (1|i))\b", re.I)
 AI_BONUS, ENTRY_BONUS = 5, 5
 # roles outside SDE / backend / AI-ML engineering: never Strong
-OFF_TARGET = re.compile(r"\b(security|cyber|analyst|consultant|operations|ops|sre|site reliability|devops|network|mainframe|"
+OFF_TARGET = re.compile(r"\b(security|cyber|threat|privileged access|analyst|consultant|operations|ops|sre|site reliability|"
+                        r"devops|devsecops|network|mainframe|test engineer|engineer in test|tester|qe|quality engineer|"
+                        r"oracle|guidewire|maximo|\.net|dot net|c#|databricks|power platform|power bi|bi developer|sharepoint|"
+                        r"dynamics 365|pega|mulesoft|"
                         r"sap|salesforce|servicenow|ios|android|qa|testing|sdet|automation tester|embedded|firmware)\b", re.I)
 LEADS_PEOPLE = re.compile(r"\b(guide|mentor|manage|lead|supervise)s?\s+(?:a |the |other |junior )*(?:team|juniors?|consultants|engineers|practitioners|developers)\b", re.I)
 # skill weights: what defines your profile counts most, generic tooling barely
 CORE_SKILLS = {"Java", "Spring Boot", "Kafka", "Redis", "Python", "FastAPI", "Microservices", "Distributed systems", "RAG",
-               "LLM", "LangChain", "LangGraph", "MCP", "FAISS", "Embeddings", "Machine learning", "NLP", "LLM evaluation", "Payments"}
+               "LLM", "LangChain", "LangGraph", "MCP", "FAISS", "Embeddings", "Machine learning", "NLP", "LLM evaluation"}
+MIN_CORE_FOR_STRONG = 2
 GENERIC_SKILLS = {"Git", "Linux", "REST", "SQL", "CI/CD", "Docker", "AWS", "Agents", "GenAI"}
 skill_w = lambda k: 3 if k in CORE_SKILLS else 0.5 if k in GENERIC_SKILLS else 2
 TITLE_BAD = re.compile(r"\b(senior|sr\.?|staff|principal|lead|manager|head|director|architect|vp|iii|iv|sde[- ]?(2|ii|3)|engineer (2|ii|3)|intern(ship)?|sales|support|recruit|accountant|nurse|teacher|trainer|tutor|annotator)\b", re.I)
@@ -42,7 +46,8 @@ EXP = re.compile(r"(\d{1,2})\s*(?:\+|-\s*\d{1,2}|to\s*\d{1,2}|or more)?\s*\+?\s*
 EXP_LABEL = re.compile(r"(?:years?|yrs?) of (?:\w+ ){0,2}experience\s*[:\-]\s*(\d{1,2})", re.I)  # "Years of experience: 5"
 WORD_NUM = {w: str(i) for i, w in enumerate("zero one two three four five six seven eight nine ten".split())}
 # description says the role is senior even when the title doesn't
-SENIOR_DESC = re.compile(r"\b(?:looking for|seeking|hiring|as) an? (?:highly |very )?(?:experienced |seasoned )?(?:senior|sr\.?|lead|staff|principal)\b", re.I)
+SENIOR_DESC = re.compile(r"\b(?:looking for|seeking|hiring|as) an? (?:highly |very )?(?:experienced |seasoned )?(?:senior|sr\.?|lead|staff|principal)\b"
+                         r"|experience as an? (?:technical |tech |team |engineering )?(?:lead|manager)\b", re.I)
 
 # Skill vocabulary. Resume skills are whichever of these appear in resume.txt;
 # the rest only count against a job when the job asks for them.
@@ -51,7 +56,7 @@ SKILLS = {
     "Spring Boot": r"spring", "FastAPI": r"fastapi", "REST": r"\brest(ful)?\b", "Microservices": r"micro-?services?",
     "Kafka": r"kafka", "Redis": r"redis", "MySQL": r"mysql", "PostgreSQL": r"postgres", "Distributed systems": r"distributed systems?",
     "RAG": r"\brag\b|retrieval[- ]augmented", "LLM": r"\bllms?\b|large language model", "LangChain": r"langchain", "LangGraph": r"langgraph",
-    "FAISS": r"faiss|vector (db|database|search)", "Embeddings": r"embedding", "MCP": r"\bmcp\b|model context protocol",
+    "FAISS": r"faiss|vector (db|database|search)", "Embeddings": r"(?:vector|text|semantic|sentence|word) embeddings?|embeddings? models?|\bembeddings\b", "MCP": r"\bmcp\b|model context protocol",
     "Hugging Face": r"hugging ?face", "GenAI": r"gen(erative)? ?ai", "Agents": r"\bagent(s|ic)\b",
     "scikit-learn": r"scikit|sklearn", "TensorFlow": r"tensorflow", "Machine learning": r"machine learning|\bml\b", "NLP": r"\bnlp\b|natural language|\bllms?\b",
     "Deep learning": r"deep learning|neural net|lstm|transformer", "Time series": r"time[- ]series|forecast",
@@ -87,6 +92,10 @@ BACH_DEG = re.compile(r"bachelor|b\.?\s?tech|\bb\.?e\b|\bbs\b|undergrad", re.I)
 PREFERRED = re.compile(r"preferred(?: qualifications| skills)?\s*:|preferred qualifications|nice to have|good to have|bonus points", re.I)
 
 
+NOT_EXP = re.compile(r"\W*(?:ago|old|of (?:history|excellence|experience in the industry|legacy|innovation|operations)|"
+                     r"in (?:business|the market)|anniversary|of (?:our|its|the company))", re.I)
+
+
 def exp_info(text):
     """(years, evidence) for the experience a bachelor's-level candidate needs.
     'Bachelor's + 7 yrs, or Master's + 4, or PhD + 1' -> 7; numbers under 'Preferred' only count if nothing else does."""
@@ -96,7 +105,7 @@ def exp_info(text):
     for rx in (EXP, EXP_LABEL):
         for m in rx.finditer(text):
             n = int(m.group(1))
-            if n > 15:
+            if n > 15 or NOT_EXP.match(text, m.end()):
                 continue
             before = text[max(0, m.start() - 90):m.start()]
             adv = [x.start() for x in ADV_DEG.finditer(before)]
@@ -110,13 +119,19 @@ def exp_info(text):
         pool = [f for f in pool if f[1] != "adv"] or pool
         bach = [f for f in pool if f[1] == "bach"]
         if pool:
-            n, _, _, ev = min(bach or pool, key=lambda f: f[0])
+            # the headline requirement is the largest one: "10+ years Java, at least 2 in microservices" -> 10
+            n, _, _, ev = max(bach or pool, key=lambda f: f[0])
             return n, ev
     return None, ""
 
 
 def min_exp(text):
     return exp_info(text)[0]
+
+
+def dup_key(j):
+    keys = sorted(co_keys(j["company"])) or [(j["company"] or "").lower()]
+    return keys[0] + "|" + title_norm(j["title"])
 
 
 def norm_key(company, title, location):
@@ -267,6 +282,15 @@ def salary(j):
 _ashby_boards = {}
 
 
+class PostingClosed(Exception):
+    """The careers site says this job no longer exists (404/410)."""
+
+
+def _closed(r):
+    if r is not None and r.status_code in (404, 410):
+        raise PostingClosed(r.url)
+
+
 def fetch_desc(j):
     u, ats = j["url"], j["ats"]
     if ats == "Greenhouse":
@@ -275,10 +299,12 @@ def fetch_desc(j):
         if not jid:
             return ""
         r = requests.get(f"https://boards-api.greenhouse.io/v1/boards/{board}/jobs/{jid}", headers=UA, timeout=15)
+        _closed(r)
         return strip_html(r.json().get("content")) if r.ok else ""
     if ats == "Lever":
         m = re.search(r"lever\.co/([^/]+)/([\w-]+)", u)
         r = m and requests.get(f"https://api.lever.co/v0/postings/{m.group(1)}/{m.group(2)}", headers=UA, timeout=15)
+        _closed(r or None)
         if not r or not r.ok:
             return ""
         d = r.json()
@@ -290,10 +316,14 @@ def fetch_desc(j):
         if m.group(1) not in _ashby_boards:
             r = requests.get(f"https://api.ashbyhq.com/posting-api/job-board/{m.group(1)}", headers=UA, timeout=20)
             _ashby_boards[m.group(1)] = {x["id"]: x.get("descriptionPlain", "") for x in (r.json().get("jobs", []) if r.ok else [])}
-        return _ashby_boards[m.group(1)].get(m.group(2), "")
+        board = _ashby_boards[m.group(1)]
+        if board and m.group(2) not in board:
+            raise PostingClosed(u)  # board listed fine but this job is gone
+        return board.get(m.group(2), "")
     if ats == "Workday":
         m = re.search(r"https://(([^.]+)\.[^/]+)/(?:[a-z]{2}-[A-Z]{2}/)?([^/]+)/job/(.+)", u)
         r = m and requests.get(f"https://{m.group(1)}/wday/cxs/{m.group(2)}/{m.group(3)}/job/{m.group(4)}", headers=UA, timeout=15)
+        _closed(r or None)
         return strip_html(r.json().get("jobPostingInfo", {}).get("jobDescription")) if r and r.ok else ""
     return ""
 
@@ -334,6 +364,8 @@ def add_descriptions(jobs, workers=4):
         for j in host_jobs:
             try:
                 j["desc"] = fetch_desc(j)
+            except PostingClosed:
+                j["closed"] = True
             except Exception as e:
                 log.debug("desc fetch failed %s: %s", j["url"], e)
             tried[j["ats"]] += 1
@@ -350,6 +382,8 @@ def add_descriptions(jobs, workers=4):
 
 def hard_filter(j):
     """Drop only what is clearly wrong; the match % decides the rest."""
+    if j.get("closed"):
+        return False
     if not INDIA.search(j["location"] + (" India" if j["source"].startswith("jobspy") else "")):
         return False
     if TITLE_BAD.search(j["title"]) or j.get("is_recruiter") or j.get("skill_level") in ("senior", "intern"):
@@ -401,7 +435,7 @@ class Scorer:
             if LEADS_PEOPLE.search(j["desc"]):
                 pct -= 10  # leading/guiding a team usually means a more senior hire
             fit = ("off-target" if OFF_TARGET.search(j["title"]) else "" if title else "non-engineering") or \
-                  ("" if matched & CORE_SKILLS or not j["desc"] else "no core skill")
+                  ("" if len(matched & CORE_SKILLS) >= MIN_CORE_FOR_STRONG or not j["desc"] else "no core skill")
             if fit:
                 pct = min(pct, STRONG - 1)  # security/ops/QA/... or non-engineering title: at most "Maybe"
             j["fit"] = fit or "on-target"
@@ -454,8 +488,17 @@ def notion_add(jobs, token):
     if not r.ok:  # 401 = wrong token, 404 = board not connected to the integration
         log.error("notion: cannot open Job Tracker (%s %s). Nothing marked as seen; fix access and re-run.", r.status_code, r.text[:200])
         sys.exit(1)
-    added, failed = 0, set()
+    on_board = set()
+    for pg in notion_query(h, None):
+        pr = pg["properties"]
+        on_board.add((pr["Link"].get("url") or "").split("?")[0])
+        on_board.add(dup_key({"company": _plain(pr["Company"]), "title": _plain(pr["Role"])}))
+    added, failed, skipped = 0, set(), 0
     for j in jobs:
+        if dup_key(j) in on_board or (j["url"] or "").split("?")[0] in on_board:
+            skipped += 1
+            continue
+        on_board.add(dup_key(j))
         props = card_props(j)
         body = {"parent": {"database_id": NOTION_DB}, "properties": props, **({"children": desc_blocks(j)} if j["desc"] else {})}
         r = requests.post("https://api.notion.com/v1/pages", headers=h, json=body, timeout=30)
@@ -468,14 +511,18 @@ def notion_add(jobs, token):
             failed.add(j["key"])
             log.warning("notion: %s %s", r.status_code, r.text[:200])
         time.sleep(0.35)
-    log.info("notion: added %d of %d", added, len(jobs))
+    log.info("notion: added %d of %d (%d already on the board)", added, len(jobs), skipped)
     return failed
+
+
+def _plain(prop):
+    return "".join(t.get("plain_text", "") for t in prop.get("rich_text") or prop.get("title") or [])
 
 
 def notion_query(h, flt):
     pages, cursor = [], None
     while True:
-        body = {"filter": flt, "page_size": 100, **({"start_cursor": cursor} if cursor else {})}
+        body = {"page_size": 100, **({"filter": flt} if flt else {}), **({"start_cursor": cursor} if cursor else {})}
         r = requests.post(f"https://api.notion.com/v1/databases/{NOTION_DB}/query", headers=h, json=body, timeout=30)
         r.raise_for_status()
         d = r.json()
@@ -520,18 +567,27 @@ def recheck(token, scorer):
                 j["desc"], j["desc_from"] = body, "saved copy"
             if not j["desc"] and (hit := find_on_ats(j)):
                 j["desc"], j["desc_from"], j["portal"] = fetch_desc(dict(hit, desc="")), "company site match", hit["url"]
+        except PostingClosed:
+            j["closed"] = True
         except Exception as e:
             log.debug("recheck fetch failed %s: %s", j["url"], e)
         stats["desc from " + (j.get("desc_from", "none") if j["desc"] else "none")] += 1
         time.sleep(0.3)
         cards.append(j)
     keep = [j for j in cards if hard_filter(j)]
-    scorer.score(keep)  # cards with no description anywhere are scored title-only (Maybe at most)
+    scorer.score(keep)
+    best = {}  # duplicates (same company + role, or same link): keep the best-scored card
+    for j in sorted(keep, key=lambda j: -(j.get("match") or 0)):
+        for k in (dup_key(j), (j["url"] or "").split("?")[0]):
+            if k in best:
+                j["dup_of"] = best[k]
+            best.setdefault(k, j["title"])  # cards with no description anywhere are scored title-only (Maybe at most)
     for j in cards:
         if j in keep and not j["desc"] and not j.get("tier"):
             j["tier"] = "Maybe"  # too little information to judge: keep it for you to verify, never delete
-        if j not in keep or not j.get("tier"):
-            why = "fails rules" if j not in keep else f"match {j['match']}% below Maybe"
+        if j not in keep or not j.get("tier") or j.get("dup_of"):
+            why = ("posting closed" if j.get("closed") else "fails rules" if j not in keep else
+                   "duplicate card" if j.get("dup_of") else f"match {j['match']}% below Maybe")
             log.info("recheck: trash '%s' at %s (%s; min exp %s)", j["title"], j["company"], why, j.get("min_exp"))
             patch, stats["trashed"] = {"archived": True}, stats["trashed"] + 1
         else:
@@ -561,10 +617,12 @@ def main():
     jobs = [] if "--jobspy-only" in args else recent
     if "--no-jobspy" not in args:
         jobs += from_jobspy()
-    uniq = {}
+    uniq, by_role = {}, set()
     for j in jobs:
-        if j["key"] not in seen:
-            uniq.setdefault(j["key"], j)
+        if j["key"] in seen or dup_key(j) in by_role:
+            continue  # same company + title from another source/city is one card
+        by_role.add(dup_key(j))
+        uniq.setdefault(j["key"], j)
     jobs = list(uniq.values())
     cands = [j for j in jobs if hard_filter(j)]
     log.info("%d new jobs, %d pass the hard filter", len(jobs), len(cands))
