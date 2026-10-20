@@ -1,0 +1,12 @@
+AI Security Analyst, Infrastructure
+As an AI Security Analyst specializing in Infrastructure in Deloitte Cyber's Cyber for AI practice, you will own technical workstreams that secure the cloud, network, container and model-serving foundations used to run generative AI and agentic workloads. You will guide junior practitioners, lead demonstrations and help estimate delivery work.
+Lead implementation of network isolation, private access, egress controls, cluster security, secrets, artifact controls, IaC and policy enforcement.
+Own an infrastructure workstream, manage dependencies and milestones, and provide day-to-day guidance to consultants.
+Qualifications
+Required:
+Bachelor's degree in Computer Science, Engineering, Information Technology, Cybersecurity or a related field.
+2+ years of combined cybersecurity and AI engineering experience, including hands-on production work in both domains.
+Hands-on experience designing, integrating and securing production generative AI, RAG or agentic workloads.
+Hands-on depth in AWS, Azure or Google Cloud. Kubernetes or container platforms. Terraform, CI/CD pipelines, policy-as-code.
+Ability to build infrastructure automation using Python, Go, Bash, PowerShell, Git and CI/CD tooling.
+Preferred: Familiarity with machine learning frameworks such as PyTorch, TensorFlow or MLflow. Certifications such as CISSP, CCSP, CKA, CKS.

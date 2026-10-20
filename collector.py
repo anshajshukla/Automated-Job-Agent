@@ -16,7 +16,7 @@ os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
 
 NOTION_DB = os.environ.get("NOTION_DB_ID") or "da6a16b97df9409a84898ee006bbb0bb"
 SEEN_FILE, ALL_FILE = "data/seen.txt", "data/all_jobs_latest.csv"
-STRONG, MAYBE = 55, 45          # Match % thresholds for the Notion board
+STRONG, MAYBE = 65, 45          # Match % thresholds for the Notion board
 MAX_EXP = 2                     # hard cut: roles asking for 3+ years are dropped
 MAX_FETCH, MAX_NOTION = 600, 150
 HOURS_OLD = 14                  # runs at 08:00 and 18:00 IST; overlap is removed via data/seen.txt
@@ -27,8 +27,17 @@ TITLE_OK = re.compile(r"\b(software (development )?engineer|sde|backend|back[- ]
 # Target focus: AI/ML roles open to early-career engineers
 AI_TITLE = re.compile(r"\b(ai|ml|machine learning|gen ?ai|llm|nlp|data scien\w*|applied scien\w*|deep learning|computer vision|mlops|agentic)\b", re.I)
 ENTRY = re.compile(r"\b(junior|jr\.?|associate|entry[- ]level|graduate|new grad|fresher|early career|sde[- ]?(1|i)|engineer (1|i))\b", re.I)
-AI_BONUS, ENTRY_BONUS = 10, 5
-TITLE_BAD = re.compile(r"\b(senior|sr\.?|staff|principal|lead|manager|head|director|architect|vp|iii|iv|sde[- ]?(2|ii|3)|engineer (2|ii|3)|intern(ship)?|sales|support|recruit|accountant|nurse|teacher)\b", re.I)
+AI_BONUS, ENTRY_BONUS = 5, 5
+# roles outside SDE / backend / AI-ML engineering: never Strong
+OFF_TARGET = re.compile(r"\b(security|cyber|analyst|consultant|operations|ops|sre|site reliability|devops|network|mainframe|"
+                        r"sap|salesforce|servicenow|ios|android|qa|testing|sdet|automation tester|embedded|firmware)\b", re.I)
+LEADS_PEOPLE = re.compile(r"\b(guide|mentor|manage|lead|supervise)s?\s+(?:a |the |other |junior )*(?:team|juniors?|consultants|engineers|practitioners|developers)\b", re.I)
+# skill weights: what defines your profile counts most, generic tooling barely
+CORE_SKILLS = {"Java", "Spring Boot", "Kafka", "Redis", "Python", "FastAPI", "Microservices", "Distributed systems", "RAG",
+               "LLM", "LangChain", "LangGraph", "MCP", "FAISS", "Embeddings", "Machine learning", "NLP", "LLM evaluation", "Payments"}
+GENERIC_SKILLS = {"Git", "Linux", "REST", "SQL", "CI/CD", "Docker", "AWS", "Agents", "GenAI"}
+skill_w = lambda k: 3 if k in CORE_SKILLS else 0.5 if k in GENERIC_SKILLS else 2
+TITLE_BAD = re.compile(r"\b(senior|sr\.?|staff|principal|lead|manager|head|director|architect|vp|iii|iv|sde[- ]?(2|ii|3)|engineer (2|ii|3)|intern(ship)?|sales|support|recruit|accountant|nurse|teacher|trainer|tutor|annotator)\b", re.I)
 EXP = re.compile(r"(\d{1,2})\s*(?:\+|-\s*\d{1,2}|to\s*\d{1,2}|or more)?\s*\+?\s*(?:years?|yrs?)\b", re.I)
 EXP_LABEL = re.compile(r"(?:years?|yrs?) of (?:\w+ ){0,2}experience\s*[:\-]\s*(\d{1,2})", re.I)  # "Years of experience: 5"
 WORD_NUM = {w: str(i) for i, w in enumerate("zero one two three four five six seven eight nine ten".split())}
@@ -73,10 +82,41 @@ def norm_text(text):
                   lambda m: WORD_NUM[m.group(1).lower()], t, flags=re.I)
 
 
-def min_exp(text):
+ADV_DEG = re.compile(r"master|m\.?\s?tech|\bm\.?s\b|\bmba\b|ph\.?\s?d|doctor", re.I)
+BACH_DEG = re.compile(r"bachelor|b\.?\s?tech|\bb\.?e\b|\bbs\b|undergrad", re.I)
+PREFERRED = re.compile(r"preferred(?: qualifications| skills)?\s*:|preferred qualifications|nice to have|good to have|bonus points", re.I)
+
+
+def exp_info(text):
+    """(years, evidence) for the experience a bachelor's-level candidate needs.
+    'Bachelor's + 7 yrs, or Master's + 4, or PhD + 1' -> 7; numbers under 'Preferred' only count if nothing else does."""
     text = norm_text(text)
-    nums = [int(m.group(1)) for rx in (EXP, EXP_LABEL) for m in rx.finditer(text) if int(m.group(1)) <= 15]
-    return min(nums) if nums else None
+    pref = PREFERRED.search(text)
+    found = []
+    for rx in (EXP, EXP_LABEL):
+        for m in rx.finditer(text):
+            n = int(m.group(1))
+            if n > 15:
+                continue
+            before = text[max(0, m.start() - 90):m.start()]
+            adv = [x.start() for x in ADV_DEG.finditer(before)]
+            bach = [x.start() for x in BACH_DEG.finditer(before)]
+            deg = None if not (adv or bach) else ("adv" if max(adv, default=-1) > max(bach, default=-1) else "bach")
+            snippet = text[max(0, m.start() - 70):m.end() + 50].replace("\n", " ").strip()
+            found.append((n, deg, bool(pref and m.start() > pref.start()), snippet))
+    if not found:
+        return None, ""
+    for pool in ([f for f in found if not f[2]], found):
+        pool = [f for f in pool if f[1] != "adv"] or pool
+        bach = [f for f in pool if f[1] == "bach"]
+        if pool:
+            n, _, _, ev = min(bach or pool, key=lambda f: f[0])
+            return n, ev
+    return None, ""
+
+
+def min_exp(text):
+    return exp_info(text)[0]
 
 
 def norm_key(company, title, location):
@@ -117,7 +157,7 @@ def title_norm(t):
     return " ".join(re.findall(r"[a-z0-9+#]+", (t or "").lower()))
 
 
-def find_on_ats(j, min_ratio=0.8):
+def find_on_ats(j, min_ratio=0.9):
     """Same company + closest title among India careers-site jobs, or None."""
     from difflib import SequenceMatcher
     cands = [c for k in co_keys(j["company"]) for c in ATS_INDEX.get(k, [])]
@@ -316,7 +356,7 @@ def hard_filter(j):
         return False
     if SENIOR_DESC.search(norm_text(j["desc"])):
         return False
-    exp = min_exp(j["title"] + " " + j["desc"][:20000])
+    exp, j["exp_evidence"] = exp_info(j["title"] + " " + j["desc"][:20000])
     j["min_exp"] = exp
     return exp is None or exp <= MAX_EXP
 
@@ -343,10 +383,11 @@ class Scorer:
         for j, cos in zip(jobs, sims):
             wanted = skills_in(j["title"] + " " + j["desc"])
             matched, missing = wanted & self.resume_skills, wanted - self.resume_skills
-            # share of the job's asked skills you have; a long JD listing 15 skills is judged on its top 8
-            skill = min(len(matched) / min(max(len(wanted), 1 if j["desc"] else 3), 8), 1.0) if wanted else 0.3
+            # weighted share of everything the job asks for; +1.5 keeps one lucky keyword from scoring 100%
+            mw, xw = sum(map(skill_w, matched)), sum(map(skill_w, missing))
+            skill = mw / (mw + xw + 1.5) if wanted else 0.3
             if wanted and not matched:
-                skill -= 0.15 * min(len(missing), 3)
+                skill = 0
             sem = min(max((float(cos) - 0.55) / 0.2, 0), 1)
             title = 1.0 if TITLE_OK.search(j["title"]) else 0.0
             pct = 100 * (0.5 * max(skill, 0) + 0.25 * sem + 0.25 * title)
@@ -356,14 +397,55 @@ class Scorer:
                 pct += ENTRY_BONUS
             pct = min(pct, 100)
             if not j["desc"]:
-                pct *= 0.85  # title-only: less evidence, keep it a notch lower
-            if not title:
-                pct = min(pct, STRONG - 1)  # non-engineering title: at most "Maybe"
+                pct = min(pct * 0.85, STRONG - 1)  # title-only: too little evidence for Strong
+            if LEADS_PEOPLE.search(j["desc"]):
+                pct -= 10  # leading/guiding a team usually means a more senior hire
+            fit = ("off-target" if OFF_TARGET.search(j["title"]) else "" if title else "non-engineering") or \
+                  ("" if matched & CORE_SKILLS or not j["desc"] else "no core skill")
+            if fit:
+                pct = min(pct, STRONG - 1)  # security/ops/QA/... or non-engineering title: at most "Maybe"
+            j["fit"] = fit or "on-target"
             j.update(match=round(pct), matched=", ".join(sorted(matched)), missing=", ".join(sorted(missing)),
                      tier="Strong" if pct >= STRONG else "Maybe" if pct >= MAYBE else "")
 
 
 # ---------------- outputs ----------------
+
+DESC_MARKER = "Job description (as scored):"
+
+
+def desc_blocks(j):
+    para = lambda t: {"object": "block", "type": "paragraph", "paragraph": {"rich_text": [{"text": {"content": t}}]}}
+    text = re.sub(r"\s+\n", "\n", j["desc"]).strip()[:12000]
+    return [para(f"Experience evidence: {j.get('exp_evidence') or 'not stated'}"), para(DESC_MARKER)] + \
+           [para(text[i:i + 1900]) for i in range(0, len(text), 1900)]
+
+
+def card_props(j, update=False):
+    txt = lambda s: {"rich_text": [{"text": {"content": (s or "")[:1900]}}]}
+    props = {
+        "Match %": {"number": j["match"]}, "Tier": {"select": {"name": j["tier"]}},
+        "Matched skills": txt(j["matched"]), "Missing skills": txt(j["missing"]),
+        "Desc": {"select": {"name": "full" if j["desc"] else "title-only"}},
+        "Exp check": {"select": {"name": "Verify" if j.get("min_exp") is None else "Checked"}},
+        "Exp evidence": txt(j.get("exp_evidence")), "Role fit": {"select": {"name": j.get("fit", "on-target")}},
+        "Min exp (yrs)": {"number": j.get("min_exp")},
+    }
+    if j.get("portal"):
+        props["Company portal"] = {"url": j["portal"]}
+    if not update:
+        props.update({
+            "Role": {"title": [{"text": {"content": j["title"][:200]}}]}, "Company": txt(j["company"]),
+            "Status": {"status": {"name": "New"}}, "Location": txt(j["location"]),
+            "Source": {"select": {"name": j["source"][:90]}}, "Link": {"url": j["url"] or None},
+            "Key": txt(j["key"]), "Salary": txt(j.get("salary")),
+        })
+        if j.get("max_lpa") is not None:
+            props["Max salary (LPA)"] = {"number": j["max_lpa"]}
+        if re.match(r"\d{4}-\d{2}-\d{2}$", j["posted"]):
+            props["Posted"] = {"date": {"start": j["posted"]}}
+    return props
+
 
 def notion_add(jobs, token):
     h = {"Authorization": f"Bearer {token}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"}
@@ -374,23 +456,8 @@ def notion_add(jobs, token):
         sys.exit(1)
     added, failed = 0, set()
     for j in jobs:
-        props = {
-            "Role": {"title": [{"text": {"content": j["title"][:200]}}]}, "Company": txt(j["company"]),
-            "Match %": {"number": j["match"]}, "Tier": {"select": {"name": j["tier"]}}, "Status": {"status": {"name": "New"}},
-            "Location": txt(j["location"]), "Source": {"select": {"name": j["source"][:90]}}, "Link": {"url": j["url"] or None},
-            "Matched skills": txt(j["matched"]), "Missing skills": txt(j["missing"]),
-            "Desc": {"select": {"name": "full" if j["desc"] else "title-only"}}, "Key": txt(j["key"]),
-            "Salary": txt(j.get("salary")),
-            "Company portal": {"url": j.get("portal") or None},
-            "Exp check": {"select": {"name": "Verify" if j.get("min_exp") is None else "Checked"}},
-        }
-        if j.get("max_lpa") is not None:
-            props["Max salary (LPA)"] = {"number": j["max_lpa"]}
-        if j.get("min_exp") is not None:
-            props["Min exp (yrs)"] = {"number": j["min_exp"]}
-        if re.match(r"\d{4}-\d{2}-\d{2}$", j["posted"]):
-            props["Posted"] = {"date": {"start": j["posted"]}}
-        body = {"parent": {"database_id": NOTION_DB}, "properties": props}
+        props = card_props(j)
+        body = {"parent": {"database_id": NOTION_DB}, "properties": props, **({"children": desc_blocks(j)} if j["desc"] else {})}
         r = requests.post("https://api.notion.com/v1/pages", headers=h, json=body, timeout=30)
         if r.status_code == 429:
             time.sleep(float(r.headers.get("Retry-After", 2)))
@@ -405,12 +472,7 @@ def notion_add(jobs, token):
     return failed
 
 
-def recheck(token):
-    """One-off: re-check New cards with unknown experience using the current rules.
-    Careers-site cards get their description re-fetched; 3+ years or senior ones go to Notion trash."""
-    h = {"Authorization": f"Bearer {token}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"}
-    flt = {"and": [{"property": "Min exp (yrs)", "number": {"is_empty": True}},
-                   {"property": "Status", "status": {"equals": "New"}}]}
+def notion_query(h, flt):
     pages, cursor = [], None
     while True:
         body = {"filter": flt, "page_size": 100, **({"start_cursor": cursor} if cursor else {})}
@@ -419,49 +481,76 @@ def recheck(token):
         d = r.json()
         pages += d["results"]
         if not d.get("has_more"):
-            break
+            return pages
         cursor = d["next_cursor"]
+
+
+def page_text(h, page_id):
+    """Plain text of a card's body (the description saved when the card was created)."""
+    r = requests.get(f"https://api.notion.com/v1/blocks/{page_id}/children?page_size=100", headers=h, timeout=30)
+    if not r.ok:
+        return ""
+    out = []
+    for b in r.json().get("results", []):
+        rt = b.get(b.get("type"), {}).get("rich_text", [])
+        out.append("".join(t.get("plain_text", "") for t in rt))
+    return "\n".join(out).split(DESC_MARKER, 1)[-1].strip()
+
+
+def recheck(token, scorer):
+    """Re-score every card still in 'New' with the current rules. Description comes from the careers-site API,
+    else the copy saved in the card, else the same job on the company's careers site. Cards that now fail the
+    rules (3+ yrs, senior, below Maybe) go to Notion trash; the rest get updated scores and evidence."""
+    h = {"Authorization": f"Bearer {token}", "Notion-Version": "2022-06-28", "Content-Type": "application/json"}
+    pages = notion_query(h, {"property": "Status", "status": {"equals": "New"}})
     plain = lambda p, k: "".join(t["plain_text"] for t in p["properties"][k].get("rich_text") or p["properties"][k].get("title") or [])
-    stats = Counter()
+    stats, cards = Counter(), []
     for pg in pages:
         pr = pg["properties"]
         src = (pr["Source"]["select"] or {}).get("name", "")
         j = job(src, plain(pg, "Company"), plain(pg, "Role"), plain(pg, "Location"), pr["Link"]["url"], "",
                 ats=src[4:] if src.startswith("ats:") else "")
-        hit = None if j["ats"] else find_on_ats(j)
-        if j["ats"] or hit:
-            try:
-                j["desc"] = fetch_desc(j if j["ats"] else dict(hit, desc=""))
-            except Exception as e:
-                log.debug("recheck fetch failed %s: %s", j["url"], e)
-            stats["on_portal"] += bool(hit)
-            time.sleep(0.3)
-        exp = min_exp(j["title"] + " " + j["desc"][:20000])
-        if TITLE_BAD.search(j["title"]) or SENIOR_DESC.search(norm_text(j["desc"])) or (exp is not None and exp > MAX_EXP):
+        j["page_id"], hit = pg["id"], None
+        body = page_text(h, pg["id"])
+        j["had_body"] = bool(body)
+        try:
+            if j["ats"]:
+                j["desc"], j["desc_from"] = fetch_desc(j), "careers site"
+            if not j["desc"] and body:
+                j["desc"], j["desc_from"] = body, "saved copy"
+            if not j["desc"] and (hit := find_on_ats(j)):
+                j["desc"], j["desc_from"], j["portal"] = fetch_desc(dict(hit, desc="")), "company site match", hit["url"]
+        except Exception as e:
+            log.debug("recheck fetch failed %s: %s", j["url"], e)
+        stats["desc from " + (j.get("desc_from", "none") if j["desc"] else "none")] += 1
+        time.sleep(0.3)
+        cards.append(j)
+    keep = [j for j in cards if hard_filter(j)]
+    scorer.score([j for j in keep if j["desc"]])
+    for j in cards:
+        if j not in keep or (j["desc"] and not j.get("tier")):
+            why = "fails rules" if j not in keep else f"match {j['match']}% below Maybe"
+            log.info("recheck: trash '%s' at %s (%s; min exp %s)", j["title"], j["company"], why, j.get("min_exp"))
             patch, stats["trashed"] = {"archived": True}, stats["trashed"] + 1
-            log.info("recheck: trash '%s' at %s (min exp %s)", j["title"], j["company"], exp)
+        elif not j["desc"]:
+            patch, stats["no description"] = {"properties": {"Exp check": {"select": {"name": "Verify"}}}}, stats["no description"] + 1
         else:
-            props = {"Exp check": {"select": {"name": "Verify" if exp is None else "Checked"}}}
-            if hit:
-                props["Company portal"] = {"url": hit["url"]}
-            if exp is not None:
-                props["Min exp (yrs)"] = {"number": exp}
-            patch = {"properties": props}
-            stats["checked" if exp is not None else "verify"] += 1
-        r = requests.patch(f"https://api.notion.com/v1/pages/{pg['id']}", headers=h, json=patch, timeout=30)
+            patch, stats["rescored"] = {"properties": card_props(j, update=True)}, stats["rescored"] + 1
+        r = requests.patch(f"https://api.notion.com/v1/pages/{j['page_id']}", headers=h, json=patch, timeout=30)
         if not r.ok:
             log.warning("recheck: notion %s %s", r.status_code, r.text[:200])
+        elif "properties" in patch and j["desc"] and not j["had_body"]:
+            requests.patch(f"https://api.notion.com/v1/blocks/{j['page_id']}/children", headers=h,
+                           json={"children": desc_blocks(j)}, timeout=30)
         time.sleep(0.35)
-    log.info("recheck: %d cards (%d job-board cards found on company sites): %d trashed (3+ yrs or senior), "
-             "%d experience found and OK, %d marked Verify",
-             len(pages), stats["on_portal"], stats["trashed"], stats["checked"], stats["verify"])
+    log.info("recheck: %d New cards: %s", len(cards), dict(stats))
 
 
 def main():
     args = set(sys.argv[1:])
     if "--recheck" in args:
         from_feashliaa(os.environ.get("FEASHLIAA_DIR", "job-board-data"))  # builds ATS_INDEX for cross-checks
-        recheck(os.environ["NOTION_TOKEN"])
+        recheck(os.environ["NOTION_TOKEN"], Scorer(open("resume.txt").read()))
         return
     os.makedirs("data", exist_ok=True)
     seen = set(open(SEEN_FILE).read().split()) if os.path.exists(SEEN_FILE) else set()
