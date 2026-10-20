@@ -83,6 +83,26 @@ def backend():
     return None, None
 
 
+GH_ENDPOINTS = [  # (url, model id format); the first one that answers with JSON is kept for the run
+    ("https://models.github.ai/inference/chat/completions", lambda m: m),
+    ("https://models.inference.ai.azure.com/chat/completions", lambda m: m.split("/")[-1]),
+]
+
+
+def github_models(prompt, key):
+    for i, (url, model) in enumerate(GH_ENDPOINTS):
+        r = requests.post(url, timeout=120, json={
+            "model": model(GH_MODEL), "max_tokens": 2500, "temperature": 0.3,
+            "messages": [{"role": "user", "content": prompt}]},
+            headers={"Authorization": f"Bearer {key}", "Accept": "application/json", "Content-Type": "application/json",
+                     "X-GitHub-Api-Version": "2022-11-28"})
+        if "json" in r.headers.get("content-type", "") or r.status_code == 429:
+            GH_ENDPOINTS[:] = GH_ENDPOINTS[i:]  # stick with the working endpoint
+            return r
+        log.warning("github models: %s answered %s %r, trying next endpoint", url, r.status_code, r.text[:120])
+    return r
+
+
 def llm(prompt, key, kind="github"):
     for attempt in range(3):
         if kind == "claude":
@@ -90,9 +110,7 @@ def llm(prompt, key, kind="github"):
                 "model": MODEL, "max_tokens": 2500, "messages": [{"role": "user", "content": prompt}]},
                 headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"})
         else:
-            r = requests.post("https://models.github.ai/inference/chat/completions", timeout=120, json={
-                "model": GH_MODEL, "max_tokens": 2500, "temperature": 0.3, "messages": [{"role": "user", "content": prompt}]},
-                headers={"Authorization": f"Bearer {key}", "Accept": "application/vnd.github+json"})
+            r = github_models(prompt, key)
         if r.status_code in (429, 500, 502, 503, 529):
             if r.status_code == 429 and attempt == 2:
                 raise DailyLimit(r.text[:200])
