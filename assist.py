@@ -23,8 +23,10 @@ import collector as c
 
 log = logging.getLogger("assist")
 MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
+GH_MODEL = os.environ.get("GH_MODEL", "openai/gpt-4.1")  # GitHub Models: free with the workflow's GITHUB_TOKEN
 MAX_PACKS = int(os.environ.get("MAX_PACKS", "15"))  # per run; keeps API cost to a few cents
 FOLLOW_UP_DAYS, NO_REPLY_DAYS = 7, 21
+DESC_CHARS = {"claude": 12000, "github": 9000}  # GitHub Models' free tier caps input at about 8k tokens
 PACK_HEADING, PREP_HEADING = "Application pack", "Interview prep"
 
 RULES = """Rules:
@@ -72,18 +74,56 @@ JSON keys:
 "questions_to_ask": list of 3 good questions to ask the interviewer."""
 
 
-def claude(prompt, key):
+def backend():
+    """(name, key): Claude if ANTHROPIC_API_KEY is set, else GitHub Models via GITHUB_TOKEN (free), else None."""
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "claude", os.environ["ANTHROPIC_API_KEY"]
+    if os.environ.get("GITHUB_TOKEN"):
+        return "github", os.environ["GITHUB_TOKEN"]
+    return None, None
+
+
+def llm(prompt, key, kind="github"):
     for attempt in range(3):
-        r = requests.post("https://api.anthropic.com/v1/messages", timeout=120, json={
-            "model": MODEL, "max_tokens": 2500, "messages": [{"role": "user", "content": prompt}]},
-            headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"})
+        if kind == "claude":
+            r = requests.post("https://api.anthropic.com/v1/messages", timeout=120, json={
+                "model": MODEL, "max_tokens": 2500, "messages": [{"role": "user", "content": prompt}]},
+                headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"})
+        else:
+            r = requests.post("https://models.github.ai/inference/chat/completions", timeout=120, json={
+                "model": GH_MODEL, "max_tokens": 2500, "temperature": 0.3, "messages": [{"role": "user", "content": prompt}]},
+                headers={"Authorization": f"Bearer {key}", "Accept": "application/vnd.github+json"})
         if r.status_code in (429, 500, 502, 503, 529):
-            time.sleep(10 * (attempt + 1))
+            if r.status_code == 429 and attempt == 2:
+                raise DailyLimit(r.text[:200])
+            time.sleep(float(r.headers.get("Retry-After", 0)) or 15 * (attempt + 1))
             continue
         r.raise_for_status()
-        text = "".join(b.get("text", "") for b in r.json()["content"])
+        d = r.json()
+        text = "".join(b.get("text", "") for b in d["content"]) if kind == "claude" else d["choices"][0]["message"]["content"]
         return json.loads(re.search(r"\{.*\}", text, re.S).group(0))
     r.raise_for_status()
+
+
+class DailyLimit(Exception):
+    pass
+
+
+CLAIM_KEYS = ("cv_bullets", "cover_note", "referral_message")  # fit_summary may name gaps; form answers hold [fill in]
+NUM = re.compile(r"\d[\d,]*(?:\.\d+)?%?")
+
+
+def unsupported(pack, cv):
+    """Skills and numbers in the pack's claims that the CV does not contain."""
+    text = " ".join(json.dumps(pack.get(k, "")) for k in CLAIM_KEYS)
+    bad = sorted(c.skills_in(text) - c.skills_in(cv))
+    cv_nums = {n.replace(",", "") for n in NUM.findall(cv)}
+    for n in NUM.findall(text):
+        v = n.replace(",", "")
+        small = not v.endswith("%") and v.replace(".", "").isdigit() and float(v) < 5  # "2 projects", "1.5 years"
+        if v not in cv_nums and v.rstrip("%") not in cv_nums and not small:
+            bad.append(n)
+    return bad
 
 
 def as_blocks(heading, data):
@@ -128,7 +168,7 @@ def write(h, page_id, props=None, blocks=None):
     time.sleep(0.35)
 
 
-def make_packs(h, key, cv):
+def make_packs(h, key, cv, kind="github"):
     flt = {"and": [{"property": "Tier", "select": {"equals": "Strong"}},
                    {"property": "Status", "status": {"equals": "New"}},
                    {"property": "Pack", "select": {"is_empty": True}}]}
@@ -139,8 +179,17 @@ def make_packs(h, key, cv):
         if len(desc) < 300:
             log.info("pack: skip '%s' at %s (no description saved)", j["title"], j["company"])
             continue
+        prompt = PACK_PROMPT.format(cv=cv, desc=desc[:DESC_CHARS[kind]], rules=RULES, **j)
         try:
-            d = claude(PACK_PROMPT.format(cv=cv, desc=desc[:12000], rules=RULES, **j), key)
+            d = llm(prompt, key, kind)
+            if bad := unsupported(d, cv):  # one retry, told exactly what it made up
+                d = llm(prompt + f"\nYour previous answer claimed things not in the CV: {bad}. Remove them.", key, kind)
+                if bad := unsupported(d, cv):
+                    log.warning("pack: '%s' at %s dropped, still claims %s", j["title"], j["company"], bad)
+                    continue
+        except DailyLimit:
+            log.warning("pack: model's daily limit reached; the rest wait for the next run")
+            break
         except Exception as e:
             log.warning("pack: '%s' at %s failed: %s", j["title"], j["company"], e)
             continue
@@ -151,12 +200,15 @@ def make_packs(h, key, cv):
     log.info("packs: %d written (%d Strong cards waiting)", done, len(cards))
 
 
-def make_prep(h, key, cv):
+def make_prep(h, key, cv, kind="github"):
     flt = {"and": [{"property": "Status", "status": {"equals": "Interview"}},
                    {"property": "Prep", "select": {"is_empty": True}}]}
     for j in map(card, c.notion_query(h, flt)):
         try:
-            d = claude(PREP_PROMPT.format(cv=cv, desc=c.page_text(h, j["id"])[:12000] or "(not saved)", rules=RULES, **j), key)
+            d = llm(PREP_PROMPT.format(cv=cv, desc=c.page_text(h, j["id"])[:DESC_CHARS[kind]] or "(not saved)", rules=RULES, **j), key, kind)
+        except DailyLimit:
+            log.warning("prep: model's daily limit reached")
+            break
         except Exception as e:
             log.warning("prep: '%s' failed: %s", j["title"], e)
             continue
@@ -191,16 +243,17 @@ def main():
          "Content-Type": "application/json"}
     if "--packs" not in args:
         track(h)
-    key = os.environ.get("ANTHROPIC_API_KEY")
     if "--track" in args:
         return
+    kind, key = backend()
     if not key:
-        log.warning("ANTHROPIC_API_KEY not set: skipping packs and interview prep")
+        log.warning("no model key (ANTHROPIC_API_KEY or GITHUB_TOKEN): skipping packs and interview prep")
         return
+    log.info("writing with %s", MODEL if kind == "claude" else GH_MODEL)
     cv = open("resume.txt").read()
-    make_packs(h, key, cv)
+    make_packs(h, key, cv, kind)
     if "--packs" not in args:
-        make_prep(h, key, cv)
+        make_prep(h, key, cv, kind)
 
 
 if __name__ == "__main__":
