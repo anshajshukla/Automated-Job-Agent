@@ -9,7 +9,7 @@ on:
         description: "full, jobspy-only, or recheck (re-check board cards with unknown experience)"
         default: full
         type: choice
-        options: [full, jobspy-only, recheck]
+        options: [full, jobspy-only, recheck, assist]
 permissions:
   contents: write                     # commit data/seen.txt + data/all_jobs_latest.csv
 concurrency: collect-jobs
@@ -28,7 +28,9 @@ jobs:
         run: python -m pytest tests -q
       - name: Collect
         run: |
-          if [ "${{ inputs.mode }}" = "recheck" ]; then
+          if [ "${{ inputs.mode }}" = "assist" ]; then
+            exit 0
+          elif [ "${{ inputs.mode }}" = "recheck" ]; then
             python collector.py --recheck
           elif [ "${{ github.event.schedule }}" = "17 12 * * *" ] || [ "${{ inputs.mode }}" = "jobspy-only" ]; then
             python collector.py --jobspy-only
@@ -37,6 +39,11 @@ jobs:
           fi
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      - name: Application packs, follow-ups, interview prep (prepares only; never applies)
+        run: python assist.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Save seen jobs + full list
         run: |
           git config user.name "job-collector-bot"
