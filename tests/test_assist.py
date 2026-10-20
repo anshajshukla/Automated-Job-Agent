@@ -73,3 +73,16 @@ def test_pack_retries_then_drops_invented_claims(monkeypatch):
     monkeypatch.setattr(a, "write", lambda *x, **k: writes.append(x))
     a.make_packs({}, "k", CV)
     assert len(calls) == 2 and "40%" in calls[1] and writes == []
+
+
+def test_bad_reply_stops_after_first_card(monkeypatch):
+    monkeypatch.setattr(a.c, "notion_query", lambda h, f: [page("1", "New"), page("2", "New")])
+    monkeypatch.setattr(a.c, "page_text", lambda h, pid: "x" * 500)
+    calls = []
+
+    def boom(p, k, kind="github"):
+        calls.append(p)
+        raise a.BadReply("200 text/html")
+    monkeypatch.setattr(a, "llm", boom)
+    a.make_packs({}, "k", CV)
+    assert len(calls) == 1

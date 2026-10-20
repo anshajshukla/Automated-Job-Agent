@@ -99,7 +99,10 @@ def llm(prompt, key, kind="github"):
             time.sleep(float(r.headers.get("Retry-After", 0)) or 15 * (attempt + 1))
             continue
         r.raise_for_status()
-        d = r.json()
+        try:
+            d = r.json()
+        except ValueError:
+            raise BadReply(f"{r.status_code} {r.headers.get('content-type')} {r.url} body={r.text[:300]!r}")
         text = "".join(b.get("text", "") for b in d["content"]) if kind == "claude" else d["choices"][0]["message"]["content"]
         return json.loads(re.search(r"\{.*\}", text, re.S).group(0))
     r.raise_for_status()
@@ -107,6 +110,10 @@ def llm(prompt, key, kind="github"):
 
 class DailyLimit(Exception):
     pass
+
+
+class BadReply(Exception):
+    """The model API answered with something that is not JSON (wrong endpoint, auth page, outage)."""
 
 
 CLAIM_KEYS = ("cv_bullets", "cover_note", "referral_message")  # fit_summary may name gaps; form answers hold [fill in]
@@ -189,6 +196,9 @@ def make_packs(h, key, cv, kind="github"):
                     continue
         except DailyLimit:
             log.warning("pack: model's daily limit reached; the rest wait for the next run")
+            break
+        except BadReply as e:  # same failure for every card: stop instead of spending the quota
+            log.error("pack: model API reply was not JSON, stopping: %s", e)
             break
         except Exception as e:
             log.warning("pack: '%s' at %s failed: %s", j["title"], j["company"], e)
