@@ -526,16 +526,17 @@ def recheck(token, scorer):
         time.sleep(0.3)
         cards.append(j)
     keep = [j for j in cards if hard_filter(j)]
-    scorer.score([j for j in keep if j["desc"]])
+    scorer.score(keep)  # cards with no description anywhere are scored title-only (Maybe at most)
     for j in cards:
-        if j not in keep or (j["desc"] and not j.get("tier")):
+        if j in keep and not j["desc"] and not j.get("tier"):
+            j["tier"] = "Maybe"  # too little information to judge: keep it for you to verify, never delete
+        if j not in keep or not j.get("tier"):
             why = "fails rules" if j not in keep else f"match {j['match']}% below Maybe"
             log.info("recheck: trash '%s' at %s (%s; min exp %s)", j["title"], j["company"], why, j.get("min_exp"))
             patch, stats["trashed"] = {"archived": True}, stats["trashed"] + 1
-        elif not j["desc"]:
-            patch, stats["no description"] = {"properties": {"Exp check": {"select": {"name": "Verify"}}}}, stats["no description"] + 1
         else:
-            patch, stats["rescored"] = {"properties": card_props(j, update=True)}, stats["rescored"] + 1
+            stats["title-only" if not j["desc"] else "rescored"] += 1
+            patch = {"properties": card_props(j, update=True)}
         r = requests.patch(f"https://api.notion.com/v1/pages/{j['page_id']}", headers=h, json=patch, timeout=30)
         if not r.ok:
             log.warning("recheck: notion %s %s", r.status_code, r.text[:200])
