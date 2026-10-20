@@ -141,3 +141,36 @@ def test_same_role_from_two_sources_is_one_key():
     a = c.job("jobspy:indeed", "HP", "Data Engineer", "KA, India", "u1", "")
     b = c.job("ats:Workday", "hp", "Data Engineer", "Bengaluru, Karnataka, India", "u2", "")
     assert c.dup_key(a) == c.dup_key(b)
+
+
+def test_indeed_links_are_not_duplicates():
+    # regression: stripping the query made every Indeed card look identical
+    a, b = "https://in.indeed.com/viewjob?jk=395324ab6bf2aa76", "https://in.indeed.com/viewjob?jk=f4191a64e95b7acd"
+    assert c.link_key(a) != c.link_key(b)
+    assert c.link_key(a) == c.link_key(a + "&utm_source=x")
+    assert c.link_key("") != c.link_key("")
+
+
+def test_recheck_keeps_distinct_indeed_cards(scorer, monkeypatch):
+    def page(pid, role, company, link):
+        rt = lambda v: {"rich_text": [{"plain_text": v}]}
+        return {"id": pid, "properties": {"Source": {"select": {"name": "jobspy:indeed"}}, "Company": rt(company),
+                                          "Location": rt("Bengaluru"), "Role": {"title": [{"plain_text": role}]}, "Link": {"url": link}}}
+    pages = [page("1", "Software Engineer : AI", "Apple", "https://in.indeed.com/viewjob?jk=1"),
+             page("2", "Applied Scientist II", "Amazon", "https://in.indeed.com/viewjob?jk=2"),
+             page("3", "Data Engineer", "HP", "https://in.indeed.com/viewjob?jk=3"),
+             page("4", "Data Engineer", "hp", "https://hp.wd5.myworkdayjobs.com/x/job/y")]   # real duplicate of 3
+    monkeypatch.setattr(c, "notion_query", lambda h, flt: pages)
+    monkeypatch.setattr(c, "page_text", lambda h, pid: "")
+    monkeypatch.setattr(c, "find_on_ats", lambda j: None)
+    monkeypatch.setattr(c, "fetch_desc", lambda j: "")
+    monkeypatch.setattr(c.time, "sleep", lambda s: None)
+    patches = {}
+
+    class R:
+        ok, status_code, text = True, 200, ""
+
+    monkeypatch.setattr(c.requests, "patch", lambda url, **k: (patches.setdefault(url.split("/")[-1], k["json"]), R())[1])
+    c.recheck("t", scorer)
+    trashed = [k for k, v in patches.items() if v == {"archived": True}]
+    assert trashed == ["4"] or trashed == ["3"]   # only the HP duplicate goes
