@@ -1,0 +1,10 @@
+AI Operations Engineer- AI Agent, AI Tool
+In this role, you will build AI-powered tools for Agentic Operations and the agentic platform.
+Your Impact
+• Develop agentic workflows that apply AI and machine learning to risk and incident management, anomaly detection, root cause analysis.
+• Conceptualize, develop, deploy, and continually refine machine learning models and AI agents for operational use cases.
+Minimum Qualifications
+• Bachelor’s degree and 7+ years of related experience, or a master’s degree and 4+ years of related experience, or a PhD and 1+ year of related experience.
+• Strong software engineering experience building and delivering operational software tools or platform capabilities.
+Preferred Qualifications
+• Working experience building AI agents or agentic systems.
