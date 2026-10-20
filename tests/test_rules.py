@@ -98,3 +98,46 @@ def test_recheck_rescores_and_trashes(scorer, monkeypatch):
     assert patches["2"]["properties"]["Tier"]["select"]["name"] == "Strong"
     p3 = patches["3"]["properties"]                                    # no description anywhere
     assert p3["Exp check"]["select"]["name"] == "Verify" and p3["Tier"]["select"]["name"] != "Strong"
+
+
+# ---- cases found in the 2026-10-20 board audit ----
+
+@pytest.mark.parametrize("text, years", [
+    ("10+ years of hands-on experience in Java development, with at least 2 years in microservices architecture.", 10),
+    ("Required Skills 7+ years in data engineering; 2+ years with Databricks.", 7),
+    ("AI Engineer with 3-7 years of experience, including a minimum of 2 years in Generative AI (GenAI)", 3),
+    ("We are a company with 12 years of history. You bring 1-2 years of experience.", 1),
+])
+def test_experience_headline_requirement(text, years):
+    assert c.min_exp(text) == years
+
+
+def test_lead_experience_is_senior():
+    assert not c.hard_filter(jb("Software Engineer (C++)", "2-5 years of experience as a Technical Lead or Manager"))
+
+
+@pytest.mark.parametrize("title, desc", [
+    ("Associate Software Engineer", "Join our payments team. 0-2 years."),                       # one domain word only
+    ("Guidewire Configuration Developer - ClaimCenter", "Payments, REST APIs, Java. 2-5 years."),
+    ("Software Development Engineer in Test", "Python, Java, LLM test automation. 2 years."),
+    ("Software Engineer (DevSecOps)", "Python, Java, Kafka pipelines. 2 years."),
+])
+def test_not_strong(scorer, title, desc):
+    assert scored(scorer, title, desc)["tier"] != "Strong"
+
+
+def test_closed_posting_is_dropped(monkeypatch):
+    class R:
+        status_code, ok, url = 404, False, "https://x/job"
+    monkeypatch.setattr(c.requests, "get", lambda *a, **k: R())
+    j = c.job("ats:Greenhouse", "acme", "Software Engineer", "Bengaluru", "https://job-boards.greenhouse.io/acme/jobs/1", "", ats="Greenhouse")
+    with pytest.raises(c.PostingClosed):
+        c.fetch_desc(j)
+    j["closed"] = True
+    assert not c.hard_filter(j)
+
+
+def test_same_role_from_two_sources_is_one_key():
+    a = c.job("jobspy:indeed", "HP", "Data Engineer", "KA, India", "u1", "")
+    b = c.job("ats:Workday", "hp", "Data Engineer", "Bengaluru, Karnataka, India", "u2", "")
+    assert c.dup_key(a) == c.dup_key(b)
