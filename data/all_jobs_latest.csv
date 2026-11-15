@@ -1,38 +1,5 @@
 match,tier,title,company,location,source,salary,min_exp,matched,missing,url,posted,key
-64,Maybe,LLM Full Stack Engineer,Spore N Sprouts,"Bengaluru, Karnataka, India",jobspy:linkedin,,,"LLM, NLP",,https://www.linkedin.com/jobs/view/4491088890,2026-11-14,70b4c5ecc7555a68
-53,Maybe,Platform Engineer - AI & Power Platform,Commonwealth Bank,"Bengaluru East, Karnataka, India",jobspy:linkedin,,,,,https://www.linkedin.com/jobs/view/4491205588,2026-11-15,fc79203c4bb68911
-46,Maybe,Agentic Analytics Products Developer,eBay,"Bengaluru, Karnataka, India",jobspy:linkedin,,,Agents,,https://www.linkedin.com/jobs/view/4454635629,2026-11-15,d08b8ea6cc4b85b3
-45,,AI Platform Administrator,AMETEK,"Bengaluru, Karnataka, India",jobspy:linkedin,,,,,https://www.linkedin.com/jobs/view/4456321547,2026-11-15,440976be8283af91
-43,,Software Developer 2,soti,"Gurgaon, India",ats:Workday,,2,,"Angular, C#/.NET",https://soti.wd3.myworkdayjobs.com/careers/job/Gurgaon-India/Software-Developer-1_R10389-1,2026-11-13,e824ef479a0baebc
-24,,Field Application Engineer,agilent,India-Chandigarh New,ats:Workday,,,,,https://agilent.wd5.myworkdayjobs.com/agilent_careers/job/India-Chandigarh-New/Field-Application-Engineer_4039125,2026-11-13,98435e4d66318aab
-24,,Associate Technology Consultant - Galaxy Graduate Program,celonis,"Bangalore, India",ats:Greenhouse,,,,,https://job-boards.greenhouse.io/celonis/jobs/8203121003?gh_jid=8203121003,2026-11-14,e90672e6859d6536
-23,,"Snr. Site Reliability Engineer (Position located in Kochi, India)",knowbe4,"Kochi, India",ats:Greenhouse,,,,,https://job-boards.greenhouse.io/knowbe4/jobs/8943105002,2026-11-14,675d7e626ac962a8
-22,,GWS Engineer,66degrees,"Bengaluru, Pune",ats:Greenhouse,,,,,https://job-boards.greenhouse.io/66degrees/jobs/6235890004,2026-11-14,4d948a8a0ab43a70
-22,,Information Security Incident Analyst - Bengaluru,omnissa,"Bengaluru, India",ats:Workday,,,,,https://omnissa.wd501.myworkdayjobs.com/omnissa_external_career_site/job/Bengaluru-India/Information-Security-Incident-Analyst---Bengaluru_R-102374-1,2026-11-14,040165057fb2f0eb
-21,,"Account Executive, Commercial & SMB (India)",stripe,Bangalore,ats:Greenhouse,,,,,https://stripe.com/jobs/search?gh_jid=8352489,2026-11-14,9e0cab75fcd289a0
-21,,Finance and Strategy Data Analyst,stripe,Bengaluru,ats:Greenhouse,,,,,https://stripe.com/jobs/search?gh_jid=8364868,2026-11-14,a0e95ba2d8780ce0
-20,,GTM Integration Specialist II,zoominfo,"Chennai, Tamil Nadu, India",ats:Greenhouse,,,,,https://www.zoominfo.com/careers?gh_jid=8922319002,2026-11-14,50ac4907ed7970f1
-20,,Post-Training and Reinforcement Learning Engineer,Sustainability Economics.ai,"Bengaluru, Karnataka, India",jobspy:linkedin,,,,,https://www.linkedin.com/jobs/view/4490206785,2026-11-15,db1241442ec7e36e
-19,,IN_Manager_GCP Data Engineer_GCC_Advisory_Noida,pwc,Noida,ats:Workday,,,,,https://pwc.wd3.myworkdayjobs.com/nonpublic_postings/job/Noida/IN-Sr-Associate-React-Emerging-Businesses-Advisory-Bangalore_757844WD-1,2026-11-13,4d0e7dc363f8340b
-19,,Group Records Execution Analyst,barclays,"Pune, Gera Commerzone SEZ",ats:Workday,,,,,https://barclays.wd3.myworkdayjobs.com/external_career_site_barclays/job/Pune-Gera-Commerzone-SEZ/Group-Records-Execution-Analyst_JR-0000109644-1,2026-11-14,ec3da72785ef5799
-19,,PC Prime Equities Analyst,barclays,"Chennai, DLF IT Park",ats:Workday,,,,,https://barclays.wd3.myworkdayjobs.com/external_career_site_barclays/job/Chennai-DLF-IT-Park/PC-Prime-Equities-Analyst_JR-0000128729,2026-11-13,cf2a28ea79e6c591
-18,,Content Writer (Project-Based),jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/9ef674d6-4439-4fa8-9ab1-8247470ea7bb,2026-11-14,7807bb5d3f5b0029
-18,,Accounts Receivable Specialist I,zoominfo,"Chennai, Tamil Nadu, India",ats:Greenhouse,,,,,https://www.zoominfo.com/careers?gh_jid=8939729002,2026-11-14,0e069478f8fc8b48
-17,,AskHR Associate (Frontline HR Inquiry resolution),gartner,Gurgaon,ats:Workday,,,,,https://gartner.wd5.myworkdayjobs.com/ext/job/Gurgaon/AskHR-Associate--Frontline-HR-Inquiry-resolution-_115822,2026-11-14,53fed9b474b45bc8
-17,,Founding Operations - India,sieve,India,ats:Ashby,,,,,https://jobs.ashbyhq.com/sieve/be93ec67-ec70-4350-94e7-2a80a79df170,2026-11-14,12ce23791dc099d1
-16,,Growth Marketing Specialist,dozee,Bangalore,ats:Lever,,,,,https://jobs.lever.co/dozee/31cc8124-cb0a-4f23-9944-f3150e00cdad,2026-11-14,3654452befa30350
-16,,Corporate Secretary India,payoneer,"Gurugram, India",ats:Greenhouse,,,,,https://www.payoneer.com/careers/position/8344671/?gh_jid=8344671,2026-11-14,2928314e963221b9
-16,,FSP Clinical Trial Coordinator - eTMF,thermofisher,"Hyderabad, India",ats:Workday,,,,,https://thermofisher.wd5.myworkdayjobs.com/thermofishercareers/job/Hyderabad-India/FSP-Clinical-Trial-Coordinator---eTMF_R-01375033,2026-11-13,d2759f1ffa1a7e3a
-15,,"Analyst, Global Safety and Security Operations",doordashindia,"Hyderabad, India",ats:Greenhouse,,,,,https://job-boards.greenhouse.io/doordashindia/jobs/8385445,2026-11-14,172a7b4107e63130
-13,,Commercial Account Executive,delinea,Home Office (India),ats:Ashby,,,,,https://jobs.ashbyhq.com/delinea/900b041b-3048-4b84-a043-9e32869c1ee5,2026-11-14,d5c94a19c1468d34
-13,,SEO Content Specialist,donorbox,India - Remote,ats:Greenhouse,,,,,https://job-boards.greenhouse.io/donorbox/jobs/4751812005,2026-11-14,7b5f9df8c98a4ebc
-13,,Front Office Executive,JSP HEALTH CARE,"Hyderabad, India",ats:Join,,,,,https://join.com/companies/brinnovain/16948905,2026-11-14,40c6b5b3054ae606
-13,,Physiotherapist,JSP HEALTH CARE,"Hyderabad, India",ats:Join,,,,,https://join.com/companies/brinnovain/16930192,2026-11-13,e4fd105f72205c64
-13,,HR Generalist,merative,Bengaluru,ats:Workday,,,,,https://merative.wd12.myworkdayjobs.com/external_career_site/job/Bengaluru/HR-Generalist_JR01792,2026-11-14,8213c638de13944a
-13,, Programme Executive,theeconomistgroup,Gurugram,ats:Greenhouse,,,,,https://job-boards.eu.greenhouse.io/theeconomistgroup/jobs/5033580101,2026-11-14,bb0306dec0cf1b2d
-13,,FSP Clinical Trial Coordinator - Site Record Coordination,thermofisher,"Hyderabad, India",ats:Workday,,,,,https://thermofisher.wd5.myworkdayjobs.com/thermofishercareers/job/Hyderabad-India/FSP-Clinical-Trial-Coordinator---Site-Record-Coordination_R-01375029,2026-11-13,eb6cad2680e15abd
-13,,FSP Prin Clinical Trial Coordinator,thermofisher,"Hyderabad, India",ats:Workday,,,,,https://thermofisher.wd5.myworkdayjobs.com/thermofishercareers/job/Hyderabad-India/FSP-Prin-Clinical-Trial-Coordinator_R-01373495-1,2026-11-13,3eb5322f2cae573a
-13,,Research Specialist I,zoominfo,"Chennai, Tamil Nadu, India",ats:Greenhouse,,,,,https://www.zoominfo.com/careers?gh_jid=8933586002,2026-11-14,b1a9abbb9b10bf2d
-12,,Associate (SAP Cloud),stage,Gurugram,ats:Greenhouse,,,,SAP,https://www.kkr.com/careers/career-opportunities/post?gh_jid=6225612004,2026-11-14,a02be1d6f66aaf8c
-11,,QA Engineer - Contract,plume,"Hyderabad, India",ats:Greenhouse,,,,Selenium/QA,https://www.plume.com/career-opportunities/?gh_jid=8737746002,2026-11-14,ec0c5e3e0020b695
-8,,SAP IBP Consultant,jobgether,India,ats:Lever,,,,SAP,https://jobs.lever.co/jobgether/7838cf7d-f9c0-4a52-8736-7b317950fc41,2026-11-14,f49389643b4b0bac
+50,Maybe,AI Developer,Grid Dynamics,"Bengaluru, Karnataka, India",jobspy:linkedin,,,,,https://www.linkedin.com/jobs/view/4491261320,2026-11-15,5f5f100e6a445959
+50,Maybe,Predictive Maintenance Software Engineer (MWM Digital),Caterpillar Inc.,"Bengaluru East, Karnataka, India",jobspy:linkedin,,,,,https://www.linkedin.com/jobs/view/4488884884,2026-11-15,3304a895cbe42d37
+46,Maybe,Artificial Intelligence Developer,Kaufman Rossin,"Bengaluru, Karnataka, India",jobspy:linkedin,,,,,https://www.linkedin.com/jobs/view/4456756081,2026-11-15,ad4c652e5395f02a
+29,,Computer Vision Engineer,TalentRabbit,"Bengaluru, Karnataka, India",jobspy:linkedin,,,,Computer vision,https://www.linkedin.com/jobs/view/4489391641,2026-11-15,ae336634efc1472c
