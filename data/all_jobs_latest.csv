@@ -1,27 +1,105 @@
 match,tier,title,company,location,source,salary,min_exp,matched,missing,url,posted,key
-100,Strong,AI/ML Engineer,Visnaix Private Limited,"KA, India",jobspy:indeed,₹8.0–16.0 LPA,1,"Deep learning, FAISS, Git, Hugging Face, LLM, LangChain, Machine learning, NLP, Python, RAG, REST, TensorFlow, scikit-learn","Computer vision, GenAI, PyTorch",https://in.indeed.com/viewjob?jk=b50091c95a701a3b,2026-11-19,a296f9fb24f6da0c
-100,Strong,Data Scientist,Sigmoid,"KA, India",jobspy:indeed,,1,"AWS, Java, Linux, Machine learning, Pandas, Python, scikit-learn",,https://in.indeed.com/viewjob?jk=cb44861db61f0ff1,2026-11-19,26c356f1da4e6239
-92,Strong,BMC Helix AI Developer - MCP & Agentic AI,Input Zero Technologies,"KA, India",jobspy:indeed,,1,"Agents, LLM, LangChain, LangGraph, MCP, NLP, Python, REST","JavaScript, ServiceNow, TypeScript",https://in.indeed.com/viewjob?jk=40c571eed1bca83c,2026-11-19,d01af0053b736be0
-87,Strong,"Machine Learning Engineer - ECH, Vice President",NatWest Group,"KA, India",jobspy:indeed,,,"AWS, Agents, CI/CD, Git, Machine learning, Python","GenAI, Ruby",https://in.indeed.com/viewjob?jk=4e09fcc26e381765,2026-11-19,488142b43dcb1ffd
-87,Strong,"Data and AI Scientist Technology · Bengaluru, India · Hybrid",TRAVEL COUNSELLORS,"KA, India",jobspy:indeed,,,"Agents, LLM, Machine learning, NLP, Python, SQL","GenAI, Power BI/Tableau",https://in.indeed.com/viewjob?jk=2a0333d78a6636f9,2026-11-19,c6c0134da7097c92
-87,Strong,AI Product Engineer,Ericsson,"KA, India",jobspy:indeed,,,"AWS, CI/CD, Embeddings, FAISS, LLM, NLP, Python, RAG, SQL","Azure, GCP, GenAI, Prompt engineering",https://in.indeed.com/viewjob?jk=a9798f1ff561fbeb,2026-11-19,5251c75fd400eace
-81,Strong,Data and AI Scientist,TRAVEL COUNSELLORS,"KA, India",jobspy:indeed,,,"Agents, LLM, Machine learning, NLP, Python, SQL","GenAI, Power BI/Tableau",https://in.indeed.com/viewjob?jk=751b16a14c886c13,2026-11-19,ebb9c435a85f87f5
-72,Strong,"Administrator - Terraform,Python,Google Cloud Build,Ansible",HCLTech,"KA, India",jobspy:indeed,,,"FastAPI, Git, MySQL, Python","GCP, Go, Terraform",https://in.indeed.com/viewjob?jk=cadb0cf144e330bf,2026-11-19,ca7ca93ef9e4602b
-64,Maybe,AI GTM Engineer,Zycus Infotech,"KA, India",jobspy:indeed,,,"Agents, Python",,https://in.indeed.com/viewjob?jk=a40427578e54b821,2026-11-19,8e7b67b65b31f21c
-64,Maybe,Specialist I - ML Engineering,UST,"Bengaluru, Karnataka, India",jobspy:linkedin,,,Machine learning,,https://www.linkedin.com/jobs/view/4491621926,2026-11-19,9ad131d31d086c93
-64,Maybe,Frontend Engineer : AI Engineering,Skillventory,"Bengaluru, India",jobspy:naukri,,2,,,https://www.naukri.com/job-listings-frontend-engineer-ai-engineering-skillventory-bengaluru-2-to-7-years-191126032544,2026-11-19,ba6c32dd823f936e
-64,Maybe,Python Developer,Quest Global,"KA, India",jobspy:indeed,,,Python,,https://in.indeed.com/viewjob?jk=1a4285139974dc5f,2026-11-19,875519e094702bc9
-64,Maybe,Data Engineer 4A,Genpact,"KA, India",jobspy:indeed,,,"Agents, Git, Python, SQL","Airflow, Spark",https://in.indeed.com/viewjob?jk=06b987a37d97a632,2026-11-19,ef574fb2e1426578
-63,Maybe,Full Stack Developer -GenAI Application,NTT DATA,"KA, India",jobspy:indeed,,,"CI/CD, Docker, Payments, PostgreSQL, Python, REST","Azure, GenAI, JavaScript, Kubernetes, React, Selenium/QA, TypeScript",https://in.indeed.com/viewjob?jk=5747cca9717047bd,2026-11-19,64497a745fb5c784
-59,Maybe,Artificial Intelligence Engineer,Novotree Minds Consulting,"Bengaluru(Manayata Tech Park), India",jobspy:naukri,₹12.0–22.0 LPA,2,"Pandas, Python, scikit-learn",Azure,https://www.naukri.com/job-listings-artificial-intelligence-engineer-novotree-minds-consulting-bengaluru-2-to-7-years-191126035911,2026-11-19,49c5d8e7b5447ac4
-59,Maybe,Consultant | Risk Tech | Bengaluru | Regulatory & Financial Risk,Deloitte,"KA, India",jobspy:indeed,,2,"AWS, Agents, CI/CD, Docker, Embeddings, FAISS, FastAPI, Git, LangChain, LangGraph, MySQL, PostgreSQL, Python, RAG, REST, SQL, Time series","Azure, GCP, GenAI, JavaScript, Kubernetes, MongoDB, Power BI/Tableau, Prompt engineering, React, Terraform, TypeScript",https://in.indeed.com/viewjob?jk=f26c615ee1865386,2026-11-19,188d7ff3ce235757
-59,Maybe,OpenShift Engineer,QCS Dc Labs,"Bengaluru, India",jobspy:naukri,,1,"CI/CD, Microservices",,https://www.naukri.com/job-listings-openshift-engineer-qcs-dc-labs-bengaluru-1-to-5-years-191126935652,2026-11-19,7836a2a0009a15c3
-55,Maybe,Data Developer,Axa Xl,"Bengaluru, Gurugram, India",jobspy:naukri,,2,,,https://www.naukri.com/job-listings-data-developer-xl-india-business-services-pvt-ltd-gurugram-bengaluru-2-to-5-years-191126935241,2026-11-19,cc6f658198b06782
-53,Maybe,Data Analyst,Miles Education,"Bengaluru, India",jobspy:naukri,,2,"AWS, Pandas, Python, SQL",,https://www.naukri.com/job-listings-data-analyst-miles-education-bengaluru-2-to-7-years-191126031342,2026-11-19,8f79a663b0fb969b
-50,Maybe,AI Developer,MSI Services Pvt Ltd,Greater Bengaluru Area,jobspy:linkedin,,,,,https://www.linkedin.com/jobs/view/4492162476,2026-11-19,1924afa789ed364b
-46,Maybe,Integration Consultant o9,NTT DATA,"KA, India",jobspy:indeed,,2,"AWS, Payments, Python, SQL","Azure, GCP, Power BI/Tableau",https://in.indeed.com/viewjob?jk=17ba0d0352f24ce5,2026-11-19,f3d06e848c6eb2b8
-45,Maybe,Agentic AI Engineer,UST,"Bengaluru, Karnataka, India",jobspy:linkedin,,,Agents,,https://www.linkedin.com/jobs/view/4492139944,2026-11-19,cf77d2f91153d37a
-44,,Forward Deployed Engineer,Refold AI,"KA, India",jobspy:indeed,,2,"AWS, Agents, Docker, LLM, NLP, Python","Azure, Distributed systems, GCP, JavaScript, Kubernetes, Node.js, SAP, Salesforce, ServiceNow, TypeScript",https://in.indeed.com/viewjob?jk=db48a482d4076c6f,2026-11-19,3c2494999ed3e3b2
-35,,Generative AI Engineer,Scoutit,"Bengaluru, Karnataka, India",jobspy:linkedin,,,,GenAI,https://www.linkedin.com/jobs/view/4492137797,2026-11-19,7a6771dd36b2b1df
-34,,Junior Application Engineer ( On Third Party Contract),Omron Automation,"Bengaluru, India",jobspy:naukri,,2,,,https://www.naukri.com/job-listings-junior-application-engineer-on-third-party-contract-omron-automation-bengaluru-2-to-5-years-191126031985,2026-11-19,05b7b2dd7cbea16a
-29,,Walk-in || FEM Engineer - Static / Nastran /Hypermesh - Aerostructure,Quest Global,"Bengaluru, India",jobspy:naukri,,2,,,https://www.naukri.com/job-listings-fem-engineer-static-nastran-hypermesh-aerostructure-quest-global-bengaluru-2-to-5-years-191126035724,2026-11-19,5aabe0444ab3fe4f
+100,Strong,Data Scientist,sigmoid,"Bengaluru, Karnataka, India",ats:Greenhouse,,1,"AWS, Java, Linux, Machine learning, Pandas, Python, scikit-learn",,https://job-boards.greenhouse.io/sigmoid/jobs/8951153002,2026-11-19,c1393c53c8a4307c
+98,Strong,"Java, Spring boot, Agentic AI Engineer",Infosys,"KA, India",jobspy:indeed,,,"Agents, FAISS, Git, Java, Kafka, LLM, LangChain, LangGraph, Microservices, NLP, RAG, REST, SQL, Spring Boot","Azure, Prompt engineering",https://in.indeed.com/viewjob?jk=800b0a01734b88d5,2026-11-20,9e01f5bc4d0f6a36
+89,Strong,"Atlassian Developer (Python) – Jira, JSM & JPD.",gruve,India (Remote),ats:Greenhouse,,2,"AWS, CI/CD, FastAPI, Git, LLM, MySQL, NLP, PostgreSQL, Python, RAG, REST, SQL","Azure, MongoDB, ServiceNow",https://gruve.ai/careers/?gh_jid=5484210008,2026-11-19,2ce5086ee290fbce
+89,Strong,Competitive Data Scientist (Kaggle) - AI Training & Evaluation,jobgether,India,ats:Lever,,,"Agents, Machine learning, Python",,https://jobs.lever.co/jobgether/99cab97d-b0d6-4906-b985-d5369231a8a0,2026-11-19,2e36002ac173d3ae
+73,Strong,Full-Stack .NET Engineer (React & Angular),cordance,"Pune, Maharashtra, India",ats:Greenhouse,,,"AWS, CI/CD, Docker, Git, Java, Kafka, LLM, Machine learning, Microservices, MySQL, NLP, PostgreSQL, Python, REST, SQL","Angular, Azure, C#/.NET, GenAI, JavaScript, Kubernetes, MongoDB, React, TypeScript",https://job-boards.greenhouse.io/cordance/jobs/5489236008,2026-11-19,165a27270c259b9d
+65,Strong,Cloud Integration Developer - API Management & Cloud Platforms,Quest Global,"KA, India",jobspy:indeed,,,"AWS, CI/CD, Docker, Git, Microservices, Python, REST","Azure, GCP, SAP, Terraform",https://in.indeed.com/viewjob?jk=0da67aee14bd892b,2026-11-20,815e22f0b2c45f5b
+64,Maybe,Aerodynamics Expert - AI Training & Evaluation,jobgether,India,ats:Lever,,1,"Pandas, Payments, Python",,https://jobs.lever.co/jobgether/17bcf19b-face-4227-a52a-63a4e10af931,2026-11-19,972cefc412feb997
+64,Maybe,Hardware Engineering Expert - AI Training & Evaluation,jobgether,India,ats:Lever,,,"Agents, C++, Payments, Python",,https://jobs.lever.co/jobgether/dd43fd92-967d-433a-823b-0814673db0ca,2026-11-19,0686c8ab077ba502
+64,Maybe,"PhD Scientist (Physics or Bioinformatics), AI Benchmark Work (Remote)",Rustlabs,"KA, India",jobspy:indeed,INR 20–28 hourly,,"C++, Linux, Python",,https://in.indeed.com/viewjob?jk=6123dbbc0f400fc6,2026-11-19,b3da6e9f87b41fd6
+64,Maybe,Machine Learning Engineer (Voice Agents),RemoteStar,"Bengaluru, Karnataka, India",jobspy:linkedin,,,"Agents, Machine learning",,https://www.linkedin.com/jobs/view/4491696766,2026-11-20,b471d55825343143
+64,Maybe,"AI Developer – LLM Inference Engine Optimization (CPU, GPU & Edge Devices)",SandLogic,"Bengaluru, Karnataka, India",jobspy:linkedin,,,"LLM, NLP",,https://www.linkedin.com/jobs/view/4491917034,2026-11-20,5b92aeeac6951cff
+63,Maybe,"Machine Learning Engineer - ECH, Vice President",NatWest Group,"Bengaluru, Karnataka, India",jobspy:linkedin,,,Machine learning,,https://www.linkedin.com/jobs/view/4492463804,2026-11-19,c1ba246ab89b7fa1
+62,Maybe,AI Cloud Security Engineer,Infosys,"Bengaluru, India",jobspy:naukri,,2,"AWS, Linux","Azure, JavaScript",https://www.naukri.com/job-listings-ai-cloud-security-engineer-infosys-limited-bengaluru-2-to-7-years-261026921963,2026-11-20,b893784037d44e85
+59,Maybe,Data Scientist,Ericsson,"KA, India",jobspy:indeed,,,,,https://in.indeed.com/viewjob?jk=c5db28e4e04104d5,2026-11-20,b0167cf68ee4dd76
+54,Maybe,P03,TransUnion,"KA, India",jobspy:indeed,,,"AWS, CI/CD, Git, LLM, Machine learning, NLP, Python","GCP, GenAI, Scala, Spark",https://in.indeed.com/viewjob?jk=74e7a9e0bb97fce5,2026-11-20,b666ea078ef9e3ef
+53,Maybe,Software Development Engineer in Test (.Net),cordance,"Pune, Maharashtra, India",ats:Greenhouse,,,"CI/CD, REST, SQL","C#/.NET, Selenium/QA",https://job-boards.greenhouse.io/cordance/jobs/5489210008,2026-11-19,d6f8de510d7b66d6
+51,Maybe,AI Engineer,Scry AI,"Bengaluru, Karnataka, India",jobspy:linkedin,,,,,https://www.linkedin.com/jobs/view/4491697500,2026-11-20,442c1d07b798f84e
+47,Maybe,Prompt AI Engineer,benchmarkgensuite,"Karnataka, Bangalore",ats:BambooHR,,,,,https://benchmarkgensuite.bamboohr.com/careers/232,2026-11-19,53a82931f861b906
+47,Maybe,Frontier Engineer,Cognizant,"KA, India",jobspy:indeed,,,"Agents, Java, Microservices, Payments, Python","Distributed systems, GCP",https://in.indeed.com/viewjob?jk=4a06e4eada4a51d1,2026-11-20,2b8b1fb730722bee
+42,,Compleat Developer,travelhrportal,"Gurgaon, India",ats:Workday,,,,,https://travelhrportal.wd1.myworkdayjobs.com/jobs/job/Gurgaon-India/Compleat-Developer_J-86183,2026-11-19,8887a6d98342af4d
+42,,Data Engineer Palantir,Capgemini,"Bengaluru, India",jobspy:naukri,,1,,Azure,https://www.naukri.com/job-listings-data-engineer-palantir-capgemini-technology-services-india-limited-bengaluru-1-to-6-years-261026921774,2026-11-20,c4a622044115c901
+36,,Business Analyst,Cheq Digital,"Bengaluru, India",jobspy:naukri,,1,"Python, SQL",Power BI/Tableau,https://www.naukri.com/job-listings-business-analyst-cheq-digital-bengaluru-1-to-3-years-201126021467,2026-11-20,e5aed0443e1884fb
+30,,Advanced Engineer - Technology Development-Computer Vision,Autoliv India,"Singahalli, Karnataka, India",jobspy:linkedin,,,,Computer vision,https://www.linkedin.com/jobs/view/4492520223,2026-11-19,46af91abc293f80b
+29,,Computer Vision Engineer,Fast Code AI,"Bengaluru, Karnataka, India",jobspy:linkedin,,,,Computer vision,https://www.linkedin.com/jobs/view/4492551525,2026-11-20,698d1d3ebab6dbae
+26,,DevSecOps Engineer,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/f8fb3024-7e98-4a8c-9966-b9163bf20e42,2026-11-19,524851d7f560582f
+25,,HyperCare Consultant - Hybrid Cloud & Systems Infrastructure Engineer,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/9a88b08f-d989-45f2-a3a6-a7e58db99f49,2026-11-19,e499af4fda7f4e4f
+25,,SIEM Knowledge Engineer,securonix,"Bangalore, Karnataka",ats:BambooHR,,,,,https://securonix.bamboohr.com/careers/1983,2026-11-19,47df37d6a4c52962
+24,,Data Centre Engineer,picoquantitativetrading,Mumbai,ats:Greenhouse,,,,,https://job-boards.greenhouse.io/picoquantitativetrading/jobs/4730309006,2026-11-19,a9fba24cc0aeae38
+24,,Artificial Intelligence Engineer,NexaCare Talent Mobility,"Bengaluru South, Karnataka, India",jobspy:linkedin,,,,,https://www.linkedin.com/jobs/view/4492550956,2026-11-20,295150731f26ca5f
+23,,PLM Analyst,chargepoint,India - Remote,ats:Greenhouse,,,,,https://www.chargepoint.com/about/opportunities/job/?gh_jid=8932406002,2026-11-19,31d392b0154c4295
+23,,HVAC BIM engineer,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/ae346245-35c9-4c51-bcf4-3be6b805f30e,2026-11-19,98ccbfb3774fa67f
+23,,System Validation Engineer - Silicon Co-Design Group,nvidia,"India, Bengaluru",ats:Workday,,,,,https://nvidia.wd5.myworkdayjobs.com/nvidiaexternalcareersite/job/India-Bengaluru/System-Validation-Engineer---Silicon-Co-Design-Group_JR2030025,2026-11-19,4a7b04ad84de437f
+23,,Escalation Engineer - ZTB,zscaler,"Bangalore, IND",ats:Greenhouse,,,,,https://job-boards.greenhouse.io/zscaler/jobs/5085027007,2026-11-19,e28a86c6079ca4ab
+22,,Associate Junior- Testing - Pune- Citi,capco,India - Pune,ats:Greenhouse,,,,,https://job-boards.greenhouse.io/capco/jobs/8041350,2026-11-19,24f10b06913f11a2
+22,,CRI/CRE  Analyst,capco,India,ats:Greenhouse,,,,,https://job-boards.greenhouse.io/capco/jobs/8401599,2026-11-19,5c5904c04f35c0fd
+21,,Design Quality Engineer (QARA),dozee,Bangalore,ats:Lever,,,,,https://jobs.lever.co/dozee/f8968991-b463-4b45-b03c-54ad205d433d,2026-11-19,5a022c1b1871fa39
+21,,India - Executive HSSE,issgh,"Mumbai, Maharashtra",ats:BambooHR,,,,,https://issgh.bamboohr.com/careers/2157,2026-11-19,b388a58358288d18
+21,,Expert Systems Engineer,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/84f3dc1d-a471-4527-a8c6-a56131e9e567,2026-11-19,bf9fd459087ef1d3
+21,,Field Consultant - NetSuite,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/3c6f9a4e-e6d1-41ed-a44b-86e6382c7f24,2026-11-19,3911f41c38fd587e
+21,,QMS Documentation & Training Analyst,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/77f7f1a5-a81d-4d11-9fd1-539517b5ef90,2026-11-19,a2f8b26fecebf65e
+21,,"Associate II, Fund Administration (Accounting) - India",junipersquare,India,ats:Ashby,,,,,https://jobs.ashbyhq.com/junipersquare/86179be5-b19e-4c51-b24f-b8d51520162b,2026-11-19,c4ffdf319760e348
+21,,Accounts Receivable & payable Specialist,weekdayworks,Delhi,ats:Lever,,,,,https://jobs.lever.co/weekdayworks/6b60bcf1-2f6a-4c2b-9dfa-6f997957bd69,2026-11-19,37a24d748db3d998
+21,,Business Analyst - Stress Testing - Market Risk/Credit Risk,capco,India - Mumbai,ats:Greenhouse,,,,,https://job-boards.greenhouse.io/capco/jobs/8374644,2026-11-19,7e2407286a692ad8
+21,,Recruitment Specialist,Acara Solutions,"Bengaluru(M.G Road), India",jobspy:naukri,,0,,,https://www.naukri.com/job-listings-recruitment-specialist-acara-solutions-bengaluru-0-to-1-years-081026038121,2026-11-20,ea8172267a3108f0
+20,,Digital Buildings Analyst,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/ff90e624-02d0-4fc8-be35-8cd33dbec917,2026-11-19,e53d51c88f01e83d
+20,,Revenue Data Analyst,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/017228bc-33dd-4abb-9f97-b13efc381ae7,2026-11-19,e0c9ef275ff8baa3
+20,,SOC Analyst II,saviynt,"Bengaluru, India",ats:Lever,,,,,https://jobs.lever.co/saviynt/9092af3c-a41f-499d-abc4-fc752709cec2,2026-11-19,5c8059c1e61181da
+19,,Site Reliability Engineer - Security,deepintent,"Pune, India ",ats:Greenhouse,,,,,https://job-boards.greenhouse.io/deepintent/jobs/6265171004,2026-11-19,08b44a8ef6d34b89
+19,,Data Analyst,equifax,IND-Mumbai-Equifax-Analytics,ats:Workday,,,,,https://equifax.wd5.myworkdayjobs.com/external/job/IND-Mumbai-Equifax-Analytics/Data-Analyst_J00180132,2026-11-19,18bcef05cca178b2
+19,,"Analyst, Growth Generalist",jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/e0790287-fdcb-45c8-8340-5d017c686c03,2026-11-19,7139bf50c023222e
+19,,Design Engineer I,regalrexnord,"Pune, Maharashtra, India",ats:Workday,,,,,https://regalrexnord.wd1.myworkdayjobs.com/careers/job/Pune-Maharashtra-India/Design-Engineer-II_R25_03779,2026-11-19,0dfe41cf61b4ed26
+18,,Assurance Climate Risk Consultant,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/89a4e7ee-a6cc-4f83-a730-1eea61306e82,2026-11-19,7b70447f6b7bcdda
+18,,Quality Analyst,Lantern Digital,"Ahmedabad, India",ats:Join,,,,,https://join.com/companies/lantern-digitalcom/16967918,2026-11-19,49401cef684d8d85
+18,,Copywriter (SEM Advertising),madhive,Frequence India (Pune),ats:Ashby,,,,,https://jobs.ashbyhq.com/madhive/b98cc65f-e975-4275-9728-773a7d4fb6b1,2026-11-19,f6fbab821a90e651
+18,,Financial Analyst (FP&A),perforce,"Pune, Maharashtra",ats:Lever,,,,,https://jobs.lever.co/perforce/c456c349-2bd5-46cb-b2e0-e2ce642c78fc,2026-11-19,0585ab94993df4ad
+18,,Data & Insights Consultant,visa,"IN - Bengaluru, India",ats:Workday,,,,,https://visa.wd5.myworkdayjobs.com/visa/job/IN---Bengaluru-India/Data---Insights-Consultant_REF089617W,2026-11-19,f4b171dfa004e68d
+17,,Associate HR Analyst - APAC,aleph,"Mumbai, India",ats:Lever,,,,,https://jobs.lever.co/aleph/cfadef9b-f657-4b2d-a504-ee653c67710d,2026-11-19,06e9b69690072202
+17,,Billing Specialist,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/4b69393a-63e9-4570-9198-c3e7b90dbf37,2026-11-19,3a8e44717743338a
+17,,Business Development Executive– Auto/Industrial​,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/c0abcbbc-8782-48e9-8ba2-c6258e7f1c50,2026-11-19,82051d752bc5903d
+17,,Business Development Executive– Industrial,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/e8552817-f912-4b36-8b01-18c3ccccfe12,2026-11-19,971516f0b56d0c8c
+17,,Hindi & Punjabi Music Content Specialist,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/8f914291-8141-41d0-b29c-7049f2664c13,2026-11-19,85c03d82d58c7f12
+17,,Associate - Real Estate Advisory,ankura,IND Gurgaon,ats:Workday,,,,,https://ankura.wd5.myworkdayjobs.com/ankura/job/IND-Gurgaon/Associate---Real-Estate-Advisory_R105166,2026-11-19,d8bec50f0148433b
+17,,"Consultant, Data Management",ntrs,"Bangalore, India",ats:Workday,,,,,https://ntrs.wd1.myworkdayjobs.com/ntcampus/job/Bangalore-India/Consultant--Data-Management_R156255-1,2026-11-19,f056525b73cb6ad2
+17,,Finance - Operating Company Controllership - Associate,stage,Gurugram,ats:Greenhouse,,,,,https://www.kkr.com/careers/career-opportunities/post?gh_jid=6263975004,2026-11-19,84f34544ec9a07f0
+17,,Clearing Associate,wehrtyou,Mumbai,ats:Greenhouse,,,,,https://www.hudsonrivertrading.com/careers/job/?gh_jid=8395576,2026-11-19,63f73b2695f733e9
+17,,HR Shared Services Associate,zoetis,Mumbai,ats:Workday,,,,,https://zoetis.wd5.myworkdayjobs.com/broadbean_external/job/Mumbai/HR-Shared-Services-Associate_JR00022186-1,2026-11-19,4b0e9603956935a1
+17,,Financial Analyst (F4 Analyst),capco,India,ats:Greenhouse,,,,,https://job-boards.greenhouse.io/capco/jobs/8401585,2026-11-19,a9bf629c4f7a2d7b
+16,,Global Talent Acquisition Partner,globalli,"(Mexico, South Africa, India)",ats:Greenhouse,,,,,https://job-boards.greenhouse.io/globalli/jobs/5241151007,2026-11-19,bed6bee0e6d832da
+16,,Business Development Executive– ICT,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/9f700def-49dc-4664-87b9-ca777e4e01e3,2026-11-19,2a22eb9129eebe28
+16,,Growth Marketing Specialist,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/7260ff25-af14-4b35-b27d-cfc568fa56ce,2026-11-19,8048f06d80fae1f2
+16,,Product Management - APM - Telco,paytm,"Noida, Uttar Pradesh",ats:Lever,,,,,https://jobs.lever.co/paytm/7c3315bc-6f38-41da-a4f5-9fdeeea7cd12,2026-11-19,0a7125354fc42370
+16,,Marine Procurement Officer - Services,zodiacmaritime,"Mumbai, Maharashtra",ats:BambooHR,,,,,https://zodiacmaritime.bamboohr.com/careers/323,2026-11-19,dc2b952f6806b569
+15,,Freelance Game Tester (PS5),jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/76e960d5-68b2-4f1d-b4a7-30f19e4a31ca,2026-11-19,34240dac3bcf5885
+15,,Release Engineering Technical Leader,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/a106c30c-38c3-4823-8131-0991c51528cb,2026-11-19,fa9d0bd0d3b9d2ba
+15,,Marketing Operations Specialist (Working hours: 10pm - 7am IST),outreach,Hyderabad,ats:Lever,,,,,https://jobs.lever.co/outreach/5ae6f17f-6245-4898-869e-1238baff4afb,2026-11-19,360272333a6a4068
+14,,Enterprise Tech Administrator I   ,globalhealthcareexchangeinc,"Hyderabad, Telangana, India",ats:Greenhouse,,,,,https://job-boards.greenhouse.io/globalhealthcareexchangeinc/jobs/4754397005,2026-11-19,791a359fa45065c7
+14,,Business Development Executive– Defence,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/3b6c35c1-797b-466d-a393-b74a79bd91e3,2026-11-19,06ccb35e59ed0da0
+14,,Business Development Executive– Public Sector,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/441ec61f-a502-4daa-a6fb-722e5ec7da4f,2026-11-19,02e5e0c78898b270
+14,,Workday Consultant,techwave,"Hyderabad, Telangana",ats:Workday,,,,,https://techwave.wd108.myworkdayjobs.com/techwave_careers/job/Hyderabad-Telangana/Workday-Consultant_TW-1682,2026-11-19,e196793f9ed16034
+13,,Admin Executive,codalinc,Ahmedabad,ats:Greenhouse,,,,,http://codal.jobs?gh_jid=5489227008,2026-11-19,232e4dbaee659517
+13,,Production Artist - Branded Merchandise & Apparel,freshprints,India (Remote),ats:Greenhouse,,,,,https://job-boards.greenhouse.io/freshprints/jobs/6264431004,2026-11-19,e5ed676398e37e3f
+13,,Request for Proposal Individual Consultant Subject Matter Expert - Future readiness & employability,girleffect,India,ats:Greenhouse,,,,,https://job-boards.greenhouse.io/girleffect/jobs/8951118002,2026-11-19,46dc8b4c082462f0
+13,,Internal Auditor,hempel,India - Pune,ats:Workday,,,,,https://hempel.wd3.myworkdayjobs.com/careersnolink/job/India---Pune/Internal-Auditor_JR9605,2026-11-19,15c2459929d595e6
+13,,Appointment Setter,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/26a6b39d-d85c-4b12-8a36-2fb91dc6baf6,2026-11-19,161c77f260f20ab1
+13,,English Language Expert,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/5179ad4c-6afe-4be9-9a30-5f050208fef3,2026-11-19,b597f3ab701bff1a
+13,,Marketing Executive,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/667d2522-0038-4f37-9106-1dccd3a35f21,2026-11-19,42dffb7ee38feaad
+13,,Physics Expert (Gravity and Holography),jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/58ee9ff3-07a1-469a-b890-6fd1dd1d5107,2026-11-19,a2e435454b0764f8
+13,,Production Artist - Branded Merchandise & Apparel,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/c704fad8-1f45-4003-bd79-50b6900e800c,2026-11-19,3c3fd6013ba32bcd
+13,,RN Reviewer - Prior Auth,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/e3d29426-f2e2-45d2-a88d-7e3e6aa865e6,2026-11-19,6c8be793e036bd15
+13,,Showrunner - Storyby,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/7c8d18e1-a474-4a45-bf92-f85da2c53eb7,2026-11-19,bf11db94962bdaa7
+13,,STEM Expert,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/a9abffd6-34b4-4595-a20b-24368508de66,2026-11-19,53e74293b14d5c12
+13,,Travel Advisor,jobgether,India,ats:Lever,,,,,https://jobs.lever.co/jobgether/9b1fb5e1-6127-4c1d-ab0d-fd8ef58edf1e,2026-11-19,cc091742a3727094
+13,,Product Owner II,mrisoftware,"Bangalore, India Office",ats:Workday,,,,,https://mrisoftware.wd501.myworkdayjobs.com/external_careersite/job/Bangalore-India-Office/Product-Owner-II_R-108199,2026-11-19,f806347a710f0a9b
+13,,UX Designer,netgear,"Chennai, India",ats:Ashby,,,,,https://jobs.ashbyhq.com/netgear/dcd5a4c2-e09f-4de8-9b92-2b1b22c2e0bd,2026-11-19,d91c9955cb3c474a
+13,,AM / DM | Non IT Purchase,paytm,"Noida, Uttar Pradesh",ats:Lever,,,,,https://jobs.lever.co/paytm/a05d6a6e-6923-4fae-a1e0-ebe93fe4ec0a,2026-11-19,53f312e85b3f9521
+13,,Executive-Pharmacovigilance,piramalpharma,"Mumbai, MH",ats:Workday,,,,,https://piramalpharma.wd102.myworkdayjobs.com/piramal_external_careers/job/Mumbai-MH/Executive-Pharmacovigilance_R00004830,2026-11-19,d653dfdd46f1734d
+13,,Commercial Operations Coordinator,atariinc,"Delhi, India",ats:Greenhouse,,,,,https://job-boards.greenhouse.io/atariinc/jobs/5486163008,2026-11-19,29273feca46e3d75
+13,,PLC Technician- Nights,saputo,"Delhi, NY",ats:Workday,,,,,https://saputo.wd5.myworkdayjobs.com/saputo_external_careers/job/Delhi-NY/PLC-Technician--Nights_JR68633,2026-11-19,3262a71f0f8cbd29
+13,,Customer Service Representative,sensata,"Pune, India",ats:Workday,,,,,https://sensata.wd1.myworkdayjobs.com/sensata-careers/job/Pune-India/Customer-Service-Representative_IRC98768,2026-11-19,398b7116443987bd
+13,,HR Representative,travelhrportal,"Gurgaon, India",ats:Workday,,,,,https://travelhrportal.wd1.myworkdayjobs.com/jobs/job/Gurgaon-India/HR-Representative_J-86072,2026-11-19,fa25a2b997087445
+13,,Consultant,veeva,India - Mumbai,ats:Lever,,,,,https://jobs.lever.co/veeva/a1b1cf00-5914-4a35-9cb6-5217e07a1ee5,2026-11-19,3eff7911fa3c974e
+10,,QA Engineer,twinhealth,Delhi NCR,ats:Greenhouse,,,,Selenium/QA,https://job-boards.greenhouse.io/twinhealth/jobs/6266148004,2026-11-19,ae6f8117b012ba93
+5,,Salesforce Product Owner,jobgether,India,ats:Lever,,,,Salesforce,https://jobs.lever.co/jobgether/9d05f677-4596-4b83-a671-da52d30918f8,2026-11-19,ff7b95f856284124
+1,,QA - ATP,capco,India - Bengaluru,ats:Greenhouse,,,,Selenium/QA,https://job-boards.greenhouse.io/capco/jobs/8401483,2026-11-19,c4c5c9bb994ee458
